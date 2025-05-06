@@ -1,0 +1,42 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './glassmorphism.css';
+@import './animations.css';
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    color: white;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.gradient-text {
+    background: linear-gradient(90deg, #8e2de2, #4a00e0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.music-card {
+    transition: all 0.3s ease-in-out;
+    transform-origin: center;
+}
+
+.music-card:hover {
+    transform: scale(1.04) translateY(-6px);
+    box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* Classe pour masquer les scrollbars */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

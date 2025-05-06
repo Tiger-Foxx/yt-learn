@@ -1,0 +1,74 @@
+﻿{
+  "name": "Mood Music",
+  "short_name": "MoodMusic",
+  "description": "Découvrez la musique qui correspond à votre humeur, et les lieux que vous voulez",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0c29",
+  "theme_color": "#302b63",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/mood-249.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Analyser mon humeur",
+      "short_name": "Humeur",
+      "description": "Analyser mon humeur pour des recommandations musicales",
+      "url": "/mood-space",
+      "icons": [
+        {
+          "src": "/icons/mood-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Musique par localisation",
+      "short_name": "Location",
+      "description": "Découvrir la musique par localisation",
+      "url": "/location-music",
+      "icons": [
+        {
+          "src": "/icons/mood-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Écran d'accueil de Mood Music"
+    },
+    {
+      "src": "/screenshots/mood-space.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Analyse d'humeur sur Mood Music"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "categories": ["music", "entertainment", "lifestyle"],
+  "lang": "fr-FR",
+  "serviceworker": {
+    "src": "/service-worker.js",
+    "scope": "/"
+  }
+}

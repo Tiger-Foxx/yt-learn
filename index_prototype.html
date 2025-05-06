@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Music - Découvrez la musique qui correspond à votre humeur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #8e2de2, #4a00e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08); /* Slightly adjusted opacity */
+            backdrop-filter: blur(12px); /* Slightly increased blur */
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15); /* Slightly adjusted border */
+        }
+
+        .music-card {
+            transition: all 0.3s ease-in-out; /* Smoother transition */
+            transform-origin: center;
+        }
+
+        .music-card:hover {
+            transform: scale(1.04) translateY(-6px); /* Adjusted hover effect */
+            box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.35); /* Adjusted shadow */
+        }
+
+        .mood-selector {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .mood-selector:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.15); /* Added hover background */
+        }
+
+        .mood-selector.active {
+            transform: scale(1.15);
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.6); /* Adjusted shadow */
+            background: rgba(138, 43, 226, 0.2); /* Added active background */
+        }
+
+        .carousel {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .carousel::-webkit-scrollbar {
+             display: none; /* Chrome, Safari, Opera */
+        }
+
+        .carousel-item {
+            scroll-snap-align: start;
+            flex: 0 0 auto; /* Ensure items don't shrink */
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.5);
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #8e2de2, #4a00e0);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px); /* Slightly increased effect */
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.35); /* Adjusted shadow */
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); /* Smoother easing */
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                 box-shadow: 0 15px 25px -5px rgba(138, 43, 226, 0.4); /* Pulse shadow */
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 1s ease-in-out; /* Smoother fade */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wave-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px; /* Adjust height as needed */
+            background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="rgba(255,255,255,0.05)" opacity=".25"/><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" fill="rgba(255,255,255,0.07)" opacity=".5"/><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84-23.61,127-31.17,57.95-13.58,114.84-20.83,172-16.07,37.15,3.11,72.58,12.75,105.84,20.33,54.47,16.22,108.26,31.65,162.97,20.79,49.66-9.82,97.6-29.52,141.34-55.24,34.07-24.45,76.84-46.23,112.92-54.73,50.7-11.67,101.27-4.87,150.9,9.29,40.38,11.69,81.19,26.34,116,41.45,36.15,15.56,71.15,31.73,105.67,45.22C1139.7,109.9,1170,121,1200,120V0Z" fill="rgba(255,255,255,0.1)"/></svg>');
+            background-size: cover;
+            background-repeat: no-repeat;
+            z-index: 1; /* Ensure it's behind content but above main background */
+        }
+        /* Hide scrollbar utility */
+       .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="relative"> <!-- Added relative for footer positioning if needed -->
+
+    <!-- Navigation -->
+    <nav class="glass-card fixed top-0 left-0 right-0 z-50 mx-auto mt-4 max-w-6xl px-4 sm:px-6 py-3">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-music text-2xl gradient-text"></i>
+                <span class="text-xl font-bold gradient-text">Mood Music</span>
+            </div>
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex space-x-8">
+                <a href="#hero" class="hover:text-purple-300 transition duration-200">Accueil</a>
+                <a href="#mood-selector" class="hover:text-purple-300 transition duration-200">Humeurs</a>
+                <a href="#location" class="hover:text-purple-300 transition duration-200">Localisation</a>
+                <a href="#ai" class="hover:text-purple-300 transition duration-200">IA Musique</a>
+                <a href="#playlists" class="hover:text-purple-300 transition duration-200">Playlists</a>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="hidden sm:block px-4 py-2 rounded-full bg-white text-purple-900 font-medium hover:bg-purple-100 transition duration-200">Connexion</button>
+                <!-- Mobile Menu Button -->
+                <button id="menu-toggle" class="md:hidden text-xl p-2 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded" aria-label="Ouvrir le menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu (Hidden by default) -->
+        <!-- Basic Structure: Add JS to toggle the 'hidden' class on #mobile-menu when #menu-toggle is clicked -->
+        <div id="mobile-menu" class="hidden md:hidden mt-4 space-y-2 glass-card p-4 rounded-lg">
+             <a href="#hero" class="block px-3 py-2 rounded hover:bg-white/10 transition duration-200">Accueil</a>
+             <a href="#mood-selector" class="block px-3 py-2 rounded hover:bg-white/10 transition duration-200">Humeurs</a>
+             <a href="#location" class="block px-3 py-2 rounded hover:bg-white/10 transition duration-200">Localisation</a>
+             <a href="#ai" class="block px-3 py-2 rounded hover:bg-white/10 transition duration-200">IA Musique</a>
+             <a href="#playlists" class="block px-3 py-2 rounded hover:bg-white/10 transition duration-200">Playlists</a>
+             <hr class="border-white/10 my-2">
+             <button class="w-full px-4 py-2 rounded-full bg-white text-purple-900 font-medium hover:bg-purple-100 transition duration-200">Connexion</button>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="relative pt-32 pb-24 px-4 sm:px-6 md:px-16 min-h-screen flex items-center">
+             <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600 rounded-full filter blur-3xl opacity-20 animate-pulse animation-delay-2s"></div>
+                <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600 rounded-full filter blur-3xl opacity-20 animate-pulse animation-delay-4s"></div>
+             </div>
+            <div class="max-w-7xl mx-auto relative z-10">
+                <div class="flex flex-col md:flex-row items-center gap-12">
+                    <div class="md:w-1/2 text-center md:text-left mb-12 md:mb-0 fade-in">
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                            La musique qui <span class="gradient-text">ressemble à votre humeur</span>
+                        </h1>
+                        <p class="text-lg md:text-xl text-gray-300 mb-8">
+                            Découvrez des recommandations musicales personnalisées basées sur votre localisation, votre humeur ou même une image. Notre IA intelligente trouve la musique parfaite pour chaque moment.
+                        </p>
+                        <div class="flex flex-col sm:flex-row justify-center md:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
+                            <button class="btn-primary px-8 py-4 rounded-full font-bold text-lg pulse-animation">
+                                Essayer gratuitement
+                            </button>
+                            <button class="glass-card px-8 py-4 rounded-full font-medium text-lg flex items-center justify-center space-x-2 hover:bg-white/20 transition duration-200">
+                                <i class="fas fa-play"></i>
+                                <span>Voir la démo</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2 flex justify-center fade-in" style="animation-delay: 0.2s;">
+                        <div class="relative">
+                            <div class="glass-card w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-3xl overflow-hidden relative shadow-2xl">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27d1b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Personne écoutant de la musique avec un casque lumineux" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opacity-70"></div>
+                            </div>
+                            <div class="absolute -bottom-6 -right-6 glass-card p-4 rounded-2xl shadow-xl backdrop-blur-lg border border-white/10">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-headphones text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-sm sm:text-base">Playlist du moment</p>
+                                        <p class="text-xs sm:text-sm text-gray-300">Basée sur votre humeur</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="wave-bg"></div>
+        </section>
+
+        <!-- Mood Selector Section -->
+        <section id="mood-selector" class="py-20 px-4 sm:px-6 md:px-16 relative">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Comment vous sentez-vous aujourd'hui ?</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">Décrivez votre humeur, téléchargez une image, ou choisissez un mood, et notre IA trouvera la musique parfaite.</p>
+                </div>
+
+                <div class="glass-card p-6 sm:p-8 rounded-3xl mb-12 shadow-lg">
+                    <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8">
+                        <!-- Mood Description -->
+                        <div class="md:w-1/2">
+                            <h3 class="text-xl font-bold mb-4">Décrivez votre humeur</h3>
+                            <textarea class="input-field w-full h-32 p-4 rounded-xl mb-4 text-white placeholder-gray-400" placeholder="Ex: Je me sens énergique aujourd'hui, j'ai besoin de musique qui me donne la pêche..."></textarea>
+                            <div class="flex flex-wrap gap-3 mb-6">
+                                <span class="cursor-pointer px-4 py-2 bg-purple-900/30 rounded-full text-sm hover:bg-purple-900/50 transition">Heureux</span>
+                                <span class="cursor-pointer px-4 py-2 bg-purple-900/30 rounded-full text-sm hover:bg-purple-900/50 transition">Triste</span>
+                                <span class="cursor-pointer px-4 py-2 bg-purple-900/30 rounded-full text-sm hover:bg-purple-900/50 transition">Énergique</span>
+                                <span class="cursor-pointer px-4 py-2 bg-purple-900/30 rounded-full text-sm hover:bg-purple-900/50 transition">Détendu</span>
+                                <span class="cursor-pointer px-4 py-2 bg-purple-900/30 rounded-full text-sm hover:bg-purple-900/50 transition">Nostalgique</span>
+                            </div>
+                            <button class="btn-primary w-full py-3 rounded-xl font-medium text-lg">Trouver ma musique</button>
+                        </div>
+                         <!-- Image Upload -->
+                        <div class="md:w-1/2">
+                            <h3 class="text-xl font-bold mb-4">Ou téléchargez une image</h3>
+                            <div class="group border-2 border-dashed border-gray-500/30 rounded-xl p-6 sm:p-8 text-center cursor-pointer hover:border-purple-500 hover:bg-white/5 transition duration-300">
+                                <i class="fas fa-cloud-upload-alt text-4xl mb-4 gradient-text"></i>
+                                <p class="mb-2 text-gray-200">Glissez-déposez une image ici</p>
+                                <p class="text-sm text-gray-400 mb-4">ou cliquez pour parcourir</p>
+                                <button class="px-4 py-2 bg-white/10 rounded-full text-sm hover:bg-white/20 transition">Sélectionner une image</button>
+                                <!-- Basic file input, hidden visually but functional -->
+                                <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label="Télécharger une image">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Quick Mood Selectors -->
+                <div class="text-center">
+                    <h3 class="text-xl font-bold mb-8">Sélectionnez rapidement une humeur</h3>
+                    <div class="flex flex-wrap justify-center gap-4 sm:gap-6">
+                        <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-laugh-beam text-3xl mb-2 text-yellow-400"></i>
+                            <span class="text-xs sm:text-sm">Heureux</span>
+                        </div>
+                        <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-sad-tear text-3xl mb-2 text-blue-400"></i>
+                            <span class="text-xs sm:text-sm">Triste</span>
+                        </div>
+                        <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center active">
+                            <i class="fas fa-bolt text-3xl mb-2 text-purple-400"></i>
+                            <span class="text-xs sm:text-sm">Énergique</span>
+                        </div>
+                        <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-spa text-3xl mb-2 text-green-400"></i>
+                            <span class="text-xs sm:text-sm">Détendu</span>
+                        </div>
+                        <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-moon text-3xl mb-2 text-indigo-400"></i>
+                            <span class="text-xs sm:text-sm">Nostalgique</span>
+                        </div>
+                         <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-fire text-3xl mb-2 text-red-500"></i>
+                            <span class="text-xs sm:text-sm">Passionné</span>
+                        </div>
+                         <div class="mood-selector w-24 h-24 glass-card rounded-2xl flex flex-col items-center justify-center cursor-pointer p-2 text-center">
+                            <i class="fas fa-cloud-rain text-3xl mb-2 text-gray-400"></i>
+                            <span class="text-xs sm:text-sm">Mélancolique</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Location Section -->
+        <section id="location" class="py-20 px-4 sm:px-6 md:px-16 bg-gradient-to-b from-purple-900/10 via-purple-900/20 to-transparent">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+                    <!-- Location Input Card -->
+                    <div class="lg:w-1/2 w-full">
+                        <div class="glass-card p-6 sm:p-8 rounded-3xl shadow-lg">
+                            <h2 class="text-3xl font-bold mb-6">Musique adaptée à votre <span class="gradient-text">localisation</span></h2>
+                            <p class="text-lg mb-8 text-gray-300">Découvrez les tendances musicales autour de vous ou explorez les sons d'une ville spécifique.</p>
+
+                            <div class="mb-6">
+                                <label class="block mb-2 font-medium">Votre position actuelle</label>
+                                <div class="flex">
+                                    <button class="btn-primary px-4 sm:px-6 py-3 rounded-l-xl flex items-center space-x-2 flex-grow justify-center sm:flex-grow-0">
+                                        <i class="fas fa-location-arrow"></i>
+                                        <span>Utiliser ma position</span>
+                                    </button>
+                                    <button class="glass-card px-4 sm:px-6 py-3 rounded-r-xl border-l border-white/10 hover:bg-white/20 transition" aria-label="Choisir sur la carte">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label for="location-search" class="block mb-2 font-medium">Ou rechercher une ville</label>
+                                <div class="relative">
+                                    <input type="text" id="location-search" class="input-field w-full px-6 py-3 rounded-xl pr-12 text-white placeholder-gray-400" placeholder="Ex: Paris, Tokyo, New York...">
+                                    <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-300 hover:text-purple-100 transition p-2" aria-label="Rechercher">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button class="btn-primary w-full py-3 rounded-xl font-medium text-lg">Explorer la musique locale</button>
+                        </div>
+                    </div>
+                    <!-- Location Music Carousel -->
+                    <div class="lg:w-1/2 w-full">
+                         <div class="glass-card p-6 rounded-3xl shadow-lg">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-bold">Tendances à Paris</h3>
+                                <div class="flex space-x-2">
+                                    <!-- Add JS for carousel control -->
+                                    <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition" aria-label="Précédent">
+                                        <i class="fas fa-chevron-left text-sm"></i>
+                                    </button>
+                                    <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition" aria-label="Suivant">
+                                        <i class="fas fa-chevron-right text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="carousel flex overflow-x-auto space-x-4 sm:space-x-6 pb-4 scrollbar-hide">
+                                <!-- Carousel Item 1 -->
+                                <div class="carousel-item flex-shrink-0 music-card w-40 sm:w-48 glass-card p-4 rounded-2xl">
+                                    <div class="mb-4 relative group">
+                                        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27d1b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Pochette album Nuits d'été" class="w-full rounded-xl aspect-square object-cover shadow-md">
+                                        <button class="absolute bottom-2 right-2 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-purple-500" aria-label="Lire Nuits d'été">
+                                            <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                    <h4 class="font-bold truncate text-sm sm:text-base">Nuits d'été</h4>
+                                    <p class="text-xs sm:text-sm text-gray-300 truncate">Artiste Français</p>
+                                </div>
+                                <!-- Carousel Item 2 -->
+                                <div class="carousel-item flex-shrink-0 music-card w-40 sm:w-48 glass-card p-4 rounded-2xl">
+                                    <div class="mb-4 relative group">
+                                        <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Pochette album Rue de Paris" class="w-full rounded-xl aspect-square object-cover shadow-md">
+                                         <button class="absolute bottom-2 right-2 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-purple-500" aria-label="Lire Rue de Paris">
+                                            <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                    <h4 class="font-bold truncate text-sm sm:text-base">Rue de Paris</h4>
+                                    <p class="text-xs sm:text-sm text-gray-300 truncate">Chanteur Local</p>
+                                </div>
+                                <!-- Carousel Item 3 -->
+                                <div class="carousel-item flex-shrink-0 music-card w-40 sm:w-48 glass-card p-4 rounded-2xl">
+                                    <div class="mb-4 relative group">
+                                        <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Pochette album Festival Vibes" class="w-full rounded-xl aspect-square object-cover shadow-md">
+                                        <button class="absolute bottom-2 right-2 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-purple-500" aria-label="Lire Festival Vibes">
+                                            <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                    <h4 class="font-bold truncate text-sm sm:text-base">Festival Vibes</h4>
+                                    <p class="text-xs sm:text-sm text-gray-300 truncate">DJ International</p>
+                                </div>
+                                <!-- Carousel Item 4 -->
+                                <div class="carousel-item flex-shrink-0 music-card w-40 sm:w-48 glass-card p-4 rounded-2xl">
+                                    <div class="mb-4 relative group">
+                                        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" alt="Pochette album Café du Matin" class="w-full rounded-xl aspect-square object-cover shadow-md">
+                                         <button class="absolute bottom-2 right-2 w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-purple-500" aria-label="Lire Café du Matin">
+                                            <i class="fas fa-play ml-1"></i>
+                                        </button>
+                                    </div>
+                                    <h4 class="font-bold truncate text-sm sm:text-base">Café du Matin</h4>
+                                    <p class="text-xs sm:text-sm text-gray-300 truncate">Groupe Indé</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Section -->
+        <section id="ai" class="py-20 px-4 sm:px-6 md:px-16">
+            <div class="max-w-7xl mx-auto">
+                <div class="glass-card p-8 sm:p-12 rounded-3xl relative overflow-hidden shadow-xl">
+                    <!-- Background Blobs -->
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-purple-600 rounded-full filter blur-3xl opacity-20 pointer-events-none"></div>
+                    <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-600 rounded-full filter blur-3xl opacity-20 pointer-events-none"></div>
+
+                    <div class="flex flex-col md:flex-row items-center relative z-10 gap-12 md:gap-16">
+                        <!-- AI Description -->
+                        <div class="md:w-1/2 w-full">
+                            <h2 class="text-3xl md:text-4xl font-bold mb-6">Notre <span class="gradient-text">IA musicale</span> comprend vos émotions</h2>
+                            <p class="text-lg mb-8 text-gray-300">Grâce à des algorithmes avancés, notre IA analyse votre humeur, vos goûts et votre contexte pour vous proposer les meilleures recommandations.</p>
+
+                            <div class="space-y-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10">
+                                        <i class="fas fa-brain text-xl gradient-text"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold mb-1">Analyse Émotionnelle</h4>
+                                        <p class="text-gray-300 text-sm">Comprend votre état d'esprit à partir de texte ou d'image.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10">
+                                        <i class="fas fa-music text-xl gradient-text"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold mb-1">Base de Données Étendue</h4>
+                                        <p class="text-gray-300 text-sm">Accès à des millions de titres classés par émotion et style.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-4">
+                                    <div class="w-12 h-12 bg-purple-900/30 rounded-full flex items-center justify-center flex-shrink-0 border border-white/10">
+                                        <i class="fas fa-chart-line text-xl gradient-text"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold mb-1">Apprentissage Continu</h4>
+                                        <p class="text-gray-300 text-sm">S'améliore en apprenant de vos réactions et préférences.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Chat Example -->
+                        <div class="md:w-1/2 w-full">
+                            <div class="glass-card p-6 rounded-2xl border border-white/10">
+                                <div class="flex items-center space-x-3 mb-6">
+                                    <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                                        <i class="fas fa-robot text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold">Assistant IA MoodMusic</h4>
+                                        <p class="text-sm text-green-400">En ligne</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-black/20 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto scrollbar-hide space-y-4">
+                                    <div class="flex justify-end">
+                                        <p class="bg-purple-900/50 rounded-lg p-3 text-sm max-w-[80%]">"Je me sens nostalgique, comme un dimanche pluvieux d'automne..."</p>
+                                    </div>
+                                    <div class="flex justify-start">
+                                         <p class="bg-gray-800/50 rounded-lg p-3 text-sm max-w-[80%]">"Compris. J'ai créé une playlist 'Dimanches d'Automne' pour vous. Voici quelques extraits :"</p>
+                                    </div>
+                                     <!-- Song Snippets -->
+                                     <div class="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide pt-2">
+                                        <div class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-md">
+                                            <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Miniature Chanson 1">
+                                        </div>
+                                        <div class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-md">
+                                            <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Miniature Chanson 2">
+                                        </div>
+                                        <div class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-md">
+                                            <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Miniature Chanson 3">
+                                        </div>
+                                        <div class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-md">
+                                            <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27d1b4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=150&q=80" class="w-full h-full object-cover" alt="Miniature Chanson 4">
+                                        </div>
+                                     </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <div class="relative">
+                                        <input type="text" class="input-field w-full px-6 py-3 rounded-xl pr-16 text-white placeholder-gray-400" placeholder="Parlez à l'IA...">
+                                        <button class="absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-300 hover:text-purple-100 transition p-2" aria-label="Envoyer message">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Playlists Section -->
+        <section id="playlists" class="py-20 px-4 sm:px-6 md:px-16 bg-gradient-to-b from-purple-900/10 via-purple-900/20 to-transparent">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-4">Découvrez nos <span class="gradient-text">playlists d'humeur</span></h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">Des collections musicales soigneusement sélectionnées pour chaque état d'esprit et occasion.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Playlist Card 1: Energie -->
+                    <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-blue-600/10 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Énergie Pure</h3>
+                                    <p class="text-gray-300 text-sm">Pour vos séances de sport</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-purple-600 transition duration-300 flex-shrink-0" aria-label="Lire Énergie Pure">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27d1b4?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+21</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>24 titres</span>
+                                <span>1h 42min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlist Card 2: Détente -->
+                     <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-green-600/10 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Détente Profonde</h3>
+                                    <p class="text-gray-300 text-sm">Relaxation & Méditation</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-blue-600 transition duration-300 flex-shrink-0" aria-label="Lire Détente Profonde">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27d1b4?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                 <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+15</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>18 titres</span>
+                                <span>1h 15min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlist Card 3: Nostalgie -->
+                     <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-pink-600/20 via-purple-600/10 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Nostalgie Douce</h3>
+                                    <p class="text-gray-300 text-sm">Voyage dans le temps</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-pink-600 transition duration-300 flex-shrink-0" aria-label="Lire Nostalgie Douce">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+30</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>33 titres</span>
+                                <span>2h 05min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Playlist Card 4: Focus -->
+                     <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-yellow-600/15 via-orange-600/10 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Concentration Max</h3>
+                                    <p class="text-gray-300 text-sm">Musique pour travailler</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-orange-600 transition duration-300 flex-shrink-0" aria-label="Lire Concentration Max">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1484704849700-f032a568e944?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                 <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+40</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>43 titres</span>
+                                <span>2h 55min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- Playlist Card 5: Fête -->
+                     <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-red-600/20 via-purple-600/15 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Soirée Festive</h3>
+                                    <p class="text-gray-300 text-sm">Le son pour faire la fête</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-red-600 transition duration-300 flex-shrink-0" aria-label="Lire Soirée Festive">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1499415479124-43c324236d69?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                 <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+50</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>53 titres</span>
+                                <span>3h 30min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playlist Card 6: Voyage -->
+                    <div class="music-card glass-card p-6 rounded-3xl overflow-hidden relative group shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-br from-teal-600/20 via-indigo-600/10 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div class="relative z-10">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 class="text-2xl font-bold mb-1">Road Trip Vibes</h3>
+                                    <p class="text-gray-300 text-sm">La bande son de l'aventure</p>
+                                </div>
+                                <button class="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-teal-600 transition duration-300 flex-shrink-0" aria-label="Lire Road Trip Vibes">
+                                    <i class="fas fa-play ml-1"></i>
+                                </button>
+                            </div>
+                            <div class="flex -space-x-3 mb-6">
+                                <img src="https://images.unsplash.com/photo-1471560090627-c3 hemic-1e5b90?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 1">
+                                <img src="https://images.unsplash.com/photo-1506157786151-b8491531f063?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 2">
+                                <img src="https://images.unsplash.com/photo-1516297774904-f6c57c8c83f5?w=50&h=50&fit=crop&q=80" class="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-md" alt="Miniature 3">
+                                 <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border-2 border-white/20 text-xs font-bold text-gray-300 shadow-md">+35</div>
+                            </div>
+                            <div class="flex justify-between items-center text-sm text-gray-400">
+                                <span>38 titres</span>
+                                <span>2h 40min</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-24 py-12 px-4 sm:px-6 md:px-16 glass-card border-t border-white/10 rounded-t-3xl">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start space-x-2 mb-2">
+                        <i class="fas fa-music text-xl gradient-text"></i>
+                        <span class="text-lg font-bold gradient-text">Mood Music</span>
+                    </div>
+                    <p class="text-sm text-gray-400">© 2024 MoodMusic. Tous droits réservés.</p>
+                </div>
+                <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+                    <a href="#" class="hover:text-purple-300 transition">À Propos</a>
+                    <a href="#" class="hover:text-purple-300 transition">Carrières</a>
+                    <a href="#" class="hover:text-purple-300 transition">Presse</a>
+                    <a href="#" class="hover:text-purple-300 transition">Confidentialité</a>
+                    <a href="#" class="hover:text-purple-300 transition">Conditions</a>
+                    <a href="#" class="hover:text-purple-300 transition">Contact</a>
+                </div>
+                <div class="flex justify-center space-x-6 text-xl text-gray-400">
+                    <a href="#" class="hover:text-purple-300 transition" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="hover:text-purple-300 transition" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-purple-300 transition" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="hover:text-purple-300 transition" aria-label="Spotify"><i class="fab fa-spotify"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Simple JS for Mobile Menu Toggle -->
+    <script>
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (menuToggle && mobileMenu) {
+            menuToggle.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                // Optional: Change icon on toggle
+                const icon = menuToggle.querySelector('i');
+                if (mobileMenu.classList.contains('hidden')) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                    menuToggle.setAttribute('aria-label', 'Ouvrir le menu');
+                    menuToggle.setAttribute('aria-expanded', 'false');
+                } else {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                    menuToggle.setAttribute('aria-label', 'Fermer le menu');
+                     menuToggle.setAttribute('aria-expanded', 'true');
+                }
+            });
+
+            // Close menu when a link is clicked (optional)
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                     mobileMenu.classList.add('hidden');
+                     const icon = menuToggle.querySelector('i');
+                     icon.classList.remove('fa-times');
+                     icon.classList.add('fa-bars');
+                     menuToggle.setAttribute('aria-label', 'Ouvrir le menu');
+                     menuToggle.setAttribute('aria-expanded', 'false');
+                });
+            });
+        }
+
+        // Smooth scroll for anchor links (optional enhancement)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                // Ensure it's a valid internal link and not just '#'
+                if (href.length > 1 && document.querySelector(href)) {
+                     e.preventDefault();
+                     document.querySelector(href).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                 }
+            });
+        });
+
+    </script>
+
+</body>
+</html>
