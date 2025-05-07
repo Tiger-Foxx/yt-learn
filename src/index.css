@@ -8,3 +8,35 @@
 /*@tailwind utilities;*/
 
 @import "tailwindcss";
+/* Base styles */
+@layer base {
+    body {
+        @apply antialiased text-gray-800 dark:text-gray-200;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-medium leading-tight;
+    }
+}
+
+/* Custom component styles */
+@layer components {
+    .btn {
+        @apply px-4 py-2 rounded-md transition-colors duration-200;
+    }
+
+    .btn-primary {
+        @apply bg-blue-600 text-white hover:bg-blue-700;
+    }
+}
+
+/* Custom utilities */
+@layer utilities {
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600;
+    }
+}

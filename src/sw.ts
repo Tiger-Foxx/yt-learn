@@ -3,7 +3,7 @@
 // Service worker pour notre application PWA
 declare const self: ServiceWorkerGlobalScope;
 
-const CACHE_NAME = 'mood-music-v1';
+const CACHE_NAME = 'yt-learn';
 const OFFLINE_URL = '/offline.html';
 
 // Liste des fichiers à mettre en cache

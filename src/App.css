@@ -1,147 +1,131 @@
-/* Animation classes */
+/* Animations globales */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
-.fade-in {
-    animation: fadeIn 0.6s ease-out forwards;
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
-/* Apply delay to elements with animation-delay attributes */
-[style*="animation-delay"] {
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+.animate-slide-in-up {
+    animation: slideInUp 0.5s ease-out forwards;
+}
+
+/* Pour les transitions de route */
+.page-transition-enter {
     opacity: 0;
 }
 
-/* Glass card styles */
-.glass-card {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+.page-transition-enter-active {
+    opacity: 1;
+    transition: opacity 300ms;
 }
 
-/* Music card hover effects */
-.music-card {
-    transition: all 0.3s ease-in-out;
-    transform-origin: center;
+.page-transition-exit {
+    opacity: 1;
 }
 
-.music-card:hover {
-    transform: scale(1.04) translateY(-6px);
-    box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.35);
+.page-transition-exit-active {
+    opacity: 0;
+    transition: opacity 300ms;
 }
 
-/* Mood selector styles */
-.mood-selector {
-    transition: all 0.3s ease-in-out;
+/* Styles pour les scrollbars personnalisées */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.mood-selector:hover {
-    transform: scale(1.1);
-    background: rgba(255, 255, 255, 0.15);
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
 }
 
-.mood-selector.active {
-    transform: scale(1.15);
-    box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.6);
-    background: rgba(138, 43, 226, 0.2);
+::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
 }
 
-/* Carousel styles */
-.carousel {
-    scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
-.carousel::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-}
-
-.carousel-item {
-    scroll-snap-align: start;
-    flex: 0 0 auto;
-}
-
-/* Hide scrollbar utility */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
-}
-
-.scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-}
-
-/* Scrollbar styles */
-.scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
+.dark ::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
+.dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(147, 51, 234, 0.5);
+.dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Pulse animation */
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.8;
-        transform: scale(1.05);
-    }
+/* Correction d'overflow pour les animations */
+.overflow-fix {
+    transform: translate3d(0, 0, 0);
 }
 
-.animate-pulse {
-    animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+/* Utilitaires pour les glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-/* Gradient text */
-.gradient-text {
-    background: linear-gradient(90deg, #8e2de2, #4a00e0);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+.dark .glass {
+    background: rgba(17, 25, 40, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.125);
 }
 
-/* Input field styles */
-.input-field:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.5);
+body {
+    background-color: #0F0F0F;
+    color: white;
+    overflow-x: hidden;
 }
 
-/* Line clamp utilities */
-.line-clamp-1 {
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.bg-dark-bg {
+    background-color: #0F0F0F;
 }
 
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.text-youtube-red {
+    color: #FF0000;
 }
 
-.line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.bg-youtube-red {
+    background-color: #FF0000;
+}
+
+.bg-dark-bg {
+    background-color: #0F0F0F;
+}
+
+.bg-card-bg {
+    background-color: #1A1A1A;
+}
+
+.text-youtube-red {
+    color: #FF0000;
+}
+
+.bg-youtube-red {
+    background-color: #FF0000;
 }
