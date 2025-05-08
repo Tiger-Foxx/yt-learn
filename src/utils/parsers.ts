@@ -48,6 +48,9 @@ export function convertJsonToString(jsonObject: object): string {
 /**
  * Extrait un code HTML d'une chaîne de caractères (utile pour les réponses d'IA)
  */
+/**
+ * Extrait un code HTML d'une chaîne de caractères (utile pour les réponses d'IA)
+ */
 export function extractHTML(text: string): string {
     // Essayer de trouver du HTML dans la réponse
     const htmlPattern = /<(!DOCTYPE|html)[\s\S]*?<\/html>/i;
@@ -62,7 +65,21 @@ export function extractHTML(text: string): string {
     const codeMatch = text.match(codeBlockPattern);
 
     if (codeMatch && codeMatch[1]) {
-        return codeMatch[1].trim();
+        let extractedContent = codeMatch[1].trim();
+
+        // Vérifier si le contenu extrait commence et se termine par ```html et ```
+        const startTag = "```html";
+        const endTag = "```";
+
+        if (extractedContent.startsWith(startTag) && extractedContent.endsWith(endTag)) {
+            extractedContent = extractedContent.substring(startTag.length, extractedContent.length - endTag.length).trim();
+        }
+        // Vérifier le cas où il n'y a pas "html" après les premiers backticks
+        else if (extractedContent.startsWith(endTag) && extractedContent.endsWith(endTag) && extractedContent.length > 6) {
+            extractedContent = extractedContent.substring(endTag.length, extractedContent.length - endTag.length).trim();
+        }
+
+        return extractedContent;
     }
 
     // Sinon retourner le texte original

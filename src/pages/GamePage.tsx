@@ -1,36 +1,94 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAppContext } from '@/context/AppContext';
 import APP_CONFIG from '@/config/appConfig';
 import Loader from '@/components/layout/Loader';
+import contentRenderers from '@/services/contentRenderers';
 
 /**
  * Page affichant un jeu spécifique dans une iframe
+ * Gère différemment les types de contenu (quiz, flashcards, jeux interactifs)
  * Accessible via l'URL /game/:id où id est l'identifiant unique du jeu
  */
 const GamePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { creationHistory, refreshCreationHistory } = useAppContext();
+    const { creationHistory } = useAppContext(); // Ne pas déclencher refreshCreationHistory ici
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [processedContent, setProcessedContent] = useState<string | null>(null);
+    const loadingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Rechercher la création correspondante dans l'historique
+    // Rechercher la création correspondante dans l'historique et prétraiter le contenu si nécessaire
     useEffect(() => {
-        refreshCreationHistory();
-        setIsLoading(true);
+        // Nettoyer le timer au démontage ou quand l'effet est réexécuté
+        if (loadingTimerRef.current) {
+            clearTimeout(loadingTimerRef.current);
+        }
 
-        // Simuler un petit délai de chargement pour une meilleure UX
-        const timer = setTimeout(() => {
+        setIsLoading(true);
+        setProcessedContent(null);
+
+        loadingTimerRef.current = setTimeout(() => {
             if (!id || !creationHistory.find(item => item.id === id)) {
                 setError('Contenu introuvable');
+                setIsLoading(false);
+                return;
             }
+
+            const creation = creationHistory.find(item => item.id === id);
+            if (!creation) {
+                setError('Contenu inaccessible');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                // Selon le type de contenu, nous pourrions avoir à le transformer
+                if (creation.gameType === 'quiz' || creation.gameType === 'flashcards') {
+                    // Vérifier si le contenu est du JSON brut ou déjà du HTML
+                    let htmlContent = creation.content;
+
+                    // Détecter si le contenu est du JSON brut
+                    try {
+                        // Essayer de parser comme JSON
+                        const jsonContent = JSON.parse(creation.content);
+
+                        // Si on arrive ici, c'est que c'est du JSON valide
+                        // On doit transformer en HTML
+                        if (creation.gameType === 'quiz') {
+                            htmlContent = contentRenderers.renderQuizHTML(jsonContent);
+                        } else if (creation.gameType === 'flashcards') {
+                            htmlContent = contentRenderers.renderFlashcardsHTML(jsonContent);
+                        }
+                    } catch (e) {
+                        // Si on arrive ici, c'est probablement déjà du HTML
+                        console.log('Le contenu est probablement déjà au format HTML');
+                    }
+
+                    setProcessedContent(htmlContent);
+                } else {
+                    // Pour les jeux interactifs, on utilise directement le contenu
+                    setProcessedContent(creation.content);
+                }
+            } catch (e) {
+                console.error('Erreur lors du traitement du contenu:', e);
+                setError('Erreur lors du chargement du contenu');
+            }
+
             setIsLoading(false);
         }, 300);
 
-        return () => clearTimeout(timer);
-    }, [id, refreshCreationHistory]);
+        // Nettoyer le timer lors du démontage
+        return () => {
+            if (loadingTimerRef.current) {
+                clearTimeout(loadingTimerRef.current);
+            }
+        };
+        // Dépendance à creationHistory.length pour ne pas recréer l'effet à chaque changement d'objet
+        // mais seulement quand le nombre de créations change
+    }, [id, creationHistory.length]);
 
     // Trouver la création dans l'historique
     const creation = creationHistory.find(item => item.id === id);
@@ -52,6 +110,20 @@ const GamePage: React.FC = () => {
                 <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
             </svg>
         )
+    };
+
+    // Obtenir le type de badge en fonction du type de jeu
+    const getBadgeColor = (gameType?: string) => {
+        switch (gameType) {
+            case 'quiz':
+                return 'bg-blue-500';
+            case 'flashcards':
+                return 'bg-green-500';
+            case 'interactive':
+                return 'bg-purple-500';
+            default:
+                return 'bg-gray-500';
+        }
     };
 
     return (
@@ -93,7 +165,7 @@ const GamePage: React.FC = () => {
                         </div>
                     </div>
                 </motion.div>
-            ) : creation ? (
+            ) : creation && processedContent ? (
                 <div>
                     <div className="max-w-7xl mx-auto">
                         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -117,11 +189,7 @@ const GamePage: React.FC = () => {
                                     </h1>
                                     <div className="flex items-center text-sm text-gray-400 mt-1">
                                         <div className="flex items-center">
-                      <span className={`w-2 h-2 rounded-full mr-2 ${
-                          creation.gameType === 'quiz' ? 'bg-blue-500' :
-                              creation.gameType === 'flashcards' ? 'bg-green-500' :
-                                  'bg-purple-500'
-                      }`}></span>
+                                            <span className={`w-2 h-2 rounded-full mr-2 ${getBadgeColor(creation.gameType)}`}></span>
                                             <span className="capitalize mr-2">{creation.gameType}</span>
                                         </div>
 
@@ -179,27 +247,24 @@ const GamePage: React.FC = () => {
                             className="bg-gray-900 rounded-xl border border-gray-800 shadow-xl overflow-hidden"
                         >
                             <div className="flex items-center border-b border-gray-800 px-4 py-3">
-                                <div className={`w-3 h-3 rounded-full ${
-                                    creation.gameType === 'quiz' ? 'bg-blue-500' :
-                                        creation.gameType === 'flashcards' ? 'bg-green-500' :
-                                            'bg-purple-500'
-                                } mr-3`}></div>
+                                <div className={`w-3 h-3 rounded-full ${getBadgeColor(creation.gameType)} mr-3`}></div>
                                 <span className="text-gray-300 flex items-center">
-                  {gameTypeIcon[creation.gameType as keyof typeof gameTypeIcon]}
+                                    {creation.gameType && gameTypeIcon[creation.gameType as keyof typeof gameTypeIcon]}
                                     <span className="ml-2 capitalize">{creation.gameType}</span>
                                     {creation.metadata?.questions && (
                                         <span className="ml-2 text-gray-500">• {creation.metadata.questions} questions</span>
                                     )}
-                </span>
+                                </span>
                             </div>
 
                             <iframe
                                 id="game-frame"
-                                srcDoc={creation.content}
+                                srcDoc={processedContent}
                                 title={creation.title}
-                                className="w-full bg-white"
+                                className="w-full bg-white dark:bg-gray-900"
                                 style={{ height: 'calc(100vh - 180px)', minHeight: '600px' }}
-                                sandbox="allow-scripts"
+                                sandbox="allow-scripts allow-popups allow-same-origin"
+                                loading="lazy"
                             />
                         </motion.div>
                     </div>

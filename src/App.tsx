@@ -180,26 +180,7 @@ const App: React.FC = () => {
                 </div>
             </AppProvider>
 
-            {/* Global styles */}
-            <style jsx global>{`
-                body {
-                    background-color: #0F0F0F;
-                    color: white;
-                    overflow-x: hidden;
-                }
 
-                .bg-dark-bg {
-                    background-color: #0F0F0F;
-                }
-
-                .text-youtube-red {
-                    color: #FF0000;
-                }
-                
-                .bg-youtube-red {
-                    background-color: #FF0000;
-                }
-            `}</style>
         </>
     );
 };

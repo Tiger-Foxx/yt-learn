@@ -147,3 +147,10 @@ body {
 .animate-glow {
     animation: pulse-glow 2s ease-in-out infinite;
 }
+.bg-dark-bg { background-color: #0F0F0F; }
+.bg-card-bg { background-color: #1A1A1A; }
+.text-youtube-red { color: #FF0000; }
+.bg-youtube-red { background-color: #FF0000; }
+.border-youtube-red { border-color: #FF0000; }
+.shadow-glow { filter: drop-shadow(0 0 4px currentColor); }
+.glow-text { text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import geminiService from '@/services/geminiService';
+import contentRenderers from '@/services/contentRenderers';
 import storageService, { Creation } from '@/services/storageService';
 import { exampleCreations } from '@/data/exampleCreations';
 
@@ -69,7 +70,7 @@ function useCreation() {
         const increment = (targetProgress - startProgress) / 10;
 
         for (let i = 0; i < 10; i++) {
-            await new Promise(resolve => setTimeout(resolve, 1));
+            await new Promise(resolve => setTimeout(resolve, 100));
             setGenerationProgress(prev => Math.min(prev + increment, targetProgress));
         }
     };
@@ -101,7 +102,8 @@ function useCreation() {
             // Étape initiale commune
             await updateProgress('Initialisation', 10);
 
-            let generatedContent: string;
+            let rawContent: any; // Contenu JSON brut généré par Gemini
+            let generatedContent: string; // Contenu HTML final
 
             // Traitement selon le type de contenu à générer
             if (type === 'interactive') {
@@ -130,6 +132,9 @@ function useCreation() {
                 // 2. Générer le code HTML à partir des specs
                 await updateProgress('Création du jeu interactif', 70);
                 generatedContent = await geminiService.generateCodeFromSpec(JSON.stringify(spec), difficulty);
+
+                // Pour les jeux interactifs, on utilise directement le HTML généré
+                rawContent = spec; // Stocker les specs pour références futures
             }
             else if (type === 'quiz') {
                 // Pour les quiz : génération directe
@@ -141,31 +146,30 @@ function useCreation() {
                     }
 
                     await updateProgress('Génération du quiz', 60);
-                    const quiz = await geminiService.generateQuizFromVideo(
+                    rawContent = await geminiService.generateQuizFromVideo(
                         sourceContent.url,
                         difficulty,
                         questionCount
                     );
 
                     await updateProgress('Création de l\'interface', 80);
-                    // Notez que dans une implémentation réelle, vous devriez avoir une fonction
-                    // qui convertit le quiz en HTML complet, mais pour l'exemple:
-                    generatedContent = JSON.stringify(quiz); // En production, utilisez une fonction comme generateQuizHTML
+                    // Utilisation du renderer pour transformer JSON en HTML interactif
+                    generatedContent = contentRenderers.renderQuizHTML(rawContent);
                 } else {
                     if (!sourceContent.file) {
                         throw new Error('Fichier PDF manquant');
                     }
 
                     await updateProgress('Génération du quiz', 60);
-                    const quiz = await geminiService.generateQuizFromPDF(
+                    rawContent = await geminiService.generateQuizFromPDF(
                         sourceContent.file,
                         difficulty,
                         questionCount
                     );
 
                     await updateProgress('Création de l\'interface', 80);
-                    // Pareil ici, utilisez une vraie fonction de rendu
-                    generatedContent = JSON.stringify(quiz); // En production, utilisez une fonction comme generateQuizHTML
+                    // Utilisation du renderer pour transformer JSON en HTML interactif
+                    generatedContent = contentRenderers.renderQuizHTML(rawContent);
                 }
             }
             else if (type === 'flashcards') {
@@ -178,28 +182,28 @@ function useCreation() {
                     }
 
                     await updateProgress('Génération des flashcards', 60);
-                    const flashcards = await geminiService.generateFlashcardsFromVideo(
+                    rawContent = await geminiService.generateFlashcardsFromVideo(
                         sourceContent.url,
                         questionCount // Utiliser questionCount comme nombre de cartes
                     );
 
                     await updateProgress('Création de l\'interface', 80);
-                    // Pareil ici, utilisez une vraie fonction de rendu
-                    generatedContent = JSON.stringify(flashcards); // En production, utilisez une fonction comme generateFlashcardsHTML
+                    // Utilisation du renderer pour transformer JSON en HTML interactif
+                    generatedContent = contentRenderers.renderFlashcardsHTML(rawContent);
                 } else {
                     if (!sourceContent.file) {
                         throw new Error('Fichier PDF manquant');
                     }
 
                     await updateProgress('Génération des flashcards', 60);
-                    const flashcards = await geminiService.generateFlashcardsFromPDF(
+                    rawContent = await geminiService.generateFlashcardsFromPDF(
                         sourceContent.file,
                         questionCount // Utiliser questionCount comme nombre de cartes
                     );
 
                     await updateProgress('Création de l\'interface', 80);
-                    // Pareil ici, utilisez une vraie fonction de rendu
-                    generatedContent = JSON.stringify(flashcards); // En production, utilisez une fonction comme generateFlashcardsHTML
+                    // Utilisation du renderer pour transformer JSON en HTML interactif
+                    generatedContent = contentRenderers.renderFlashcardsHTML(rawContent);
                 }
             }
             else {
@@ -207,7 +211,23 @@ function useCreation() {
             }
 
             // Générer une miniature (ou en utiliser une par défaut)
-            const thumbnail = geminiService.generateThumbnail(type);
+            let thumbnail;
+            // Vérifier si l'URL de la source est une URL YouTube
+            if (sourceContent.url && sourceContent.url.includes('youtube.com')) {
+                // Extraire l'ID de la vidéo YouTube
+                const videoIdMatch = sourceContent.url.match(/(?:v=|youtu\.be\/)([\w-]+)(?:&|$)/);
+                if (videoIdMatch && videoIdMatch[1]) {
+                    thumbnail = `https://img.youtube.com/vi/${videoIdMatch[1]}/mqdefault.jpg`;
+                    console.log("Miniature YouTube utilisée:", thumbnail);
+                } else {
+                    // Si l'URL YouTube n'est pas au format attendu, générer une miniature par défaut
+                    thumbnail = geminiService.generateThumbnail(type);
+                    console.warn("URL YouTube invalide, miniature par défaut utilisée.");
+                }
+            } else {
+                thumbnail = geminiService.generateThumbnail(type);
+                console.warn("Service de génération de miniature non disponible, miniature par défaut utilisée.");
+            }
 
             // Enregistrer dans le localStorage
             await updateProgress('Sauvegarde', 90);
@@ -220,12 +240,15 @@ function useCreation() {
                 sourceFileName: sourceType === 'pdf' ? sourceContent.file?.name : undefined,
                 thumbnail,
                 gameType: type,
-                content: generatedContent, // Contenu HTML complet du jeu
+                content: generatedContent, // HTML complet du jeu
                 difficulty,
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 metadata: {
-                    questions: type === 'quiz' || type === 'flashcards' ? questionCount : undefined
+                    questions: type === 'quiz' || type === 'flashcards' ?
+                        (rawContent?.questions?.length || rawContent?.cards?.length || questionCount) :
+                        undefined,
+                    rawContent: type !== 'interactive' ? JSON.stringify(rawContent) : undefined // Stocker le contenu brut pour édition future
                 }
             };
 
@@ -239,6 +262,7 @@ function useCreation() {
 
             return generatedContent;
         } catch (e) {
+            console.error("Erreur lors de la génération:", e);
             const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue lors de la génération';
             setError(errorMessage);
             setIsGenerating(false);

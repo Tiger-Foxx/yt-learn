@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import APP_CONFIG from '@/config/appConfig';
-import { parseJSON } from '@/utils/parsers';
+import {extractHTML, parseJSON} from '@/utils/parsers';
 import {
     SPEC_FROM_VIDEO_PROMPT,
     SPEC_FROM_PDF_PROMPT,
@@ -228,7 +228,7 @@ async function generateCodeFromSpec(spec: string, difficulty: string = APP_CONFI
             throw new Error("Le code généré n'est pas un HTML valide");
         }
 
-        return codeResponse;
+        return extractHTML(codeResponse);
     } catch (error) {
         console.error("Erreur lors de la génération de code depuis les specs:", error);
         throw new Error(`Échec de la génération de code: ${error instanceof Error ? error.message : String(error)}`);

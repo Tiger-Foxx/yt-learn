@@ -51,7 +51,6 @@ const Navigation: React.FC<NavigationProps> = ({
         }
     ];
 
-    // Animation variants
     const itemVariants = {
         hidden: { opacity: 0, y: 10 },
         visible: {
@@ -92,53 +91,63 @@ const Navigation: React.FC<NavigationProps> = ({
                 <motion.div key={item.name} variants={itemVariants}>
                     <NavLink
                         to={item.href}
-                        className={({ isActive }) => `
-              relative flex items-center ${vertical ? 'w-full' : ''} 
-              px-3 py-2 rounded-lg transition-colors
-              ${isActive
-                            ? 'text-white font-medium before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-youtube-red/20 before:to-transparent before:rounded-lg'
-                            : 'text-gray-300 hover:text-white hover:bg-white/5'
-                        }
-              group
-            `}
-                        onClick={onNavItemClick}
+                        onClick={onNavItemClick} // Gardez le onClick ici s'il est pour le NavLink lui-même
                     >
-            <span className="flex-shrink-0 relative">
-              {item.icon}
-                {/* Active indicator */}
-                <span className={`absolute -bottom-1 left-0 w-full h-0.5 bg-youtube-red transform scale-x-0 transition-transform group-hover:scale-x-100 ${
-                    vertical ? '' : 'hidden'
-                }`}></span>
-            </span>
+                        {({ isActive }) => ( // Utilisez la fonction "render prop" ici
+                            // On ajoute un div ou un span parent pour appliquer les classes conditionnelles
+                            // qui étaient sur le NavLink, car NavLink lui-même est le <a>
+                            <div // Ou React.Fragment si ce div n'a pas besoin de classes spécifiques autres que celles du lien
+                                className={`
+                                    relative flex items-center ${vertical ? 'w-full' : ''} 
+                                    px-3 py-2 rounded-lg transition-colors
+                                    ${isActive
+                                    ? 'text-white font-medium before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-r before:from-youtube-red/20 before:to-transparent before:rounded-lg'
+                                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                }
+                                    group
+                                `}
+                                // Si onNavItemClick doit être déclenché par cet élément visuel et non le <a> sous-jacent,
+                                // déplacez-le ici. Mais typiquement, on le laisse sur NavLink/Link.
+                            >
+                                <span className="flex-shrink-0 relative">
+                                    {item.icon}
+                                    {/* Active indicator for vertical layout */}
+                                    <span className={`absolute -bottom-1 left-0 w-full h-0.5 bg-youtube-red transform scale-x-0 transition-transform group-hover:scale-x-100 ${
+                                        isActive && vertical ? 'scale-x-100' : '' // Ajustement pour l'indicateur vertical s'il doit dépendre de isActive
+                                    } ${vertical ? '' : 'hidden'}`}>
+                                    </span>
+                                </span>
 
-                        {showLabels && (
-                            <div className={`${vertical ? 'ml-3' : 'ml-1 md:ml-2'}`}>
                                 {showLabels && (
-                                    <span className={`${showDescriptions ? 'block font-medium' : ''} ${vertical ? 'text-base' : 'text-sm'}`}>
-                    {item.name}
-                  </span>
+                                    <div className={`${vertical ? 'ml-3' : 'ml-1 md:ml-2'}`}>
+                                        {showLabels && (
+                                            <span className={`${showDescriptions ? 'block font-medium' : ''} ${vertical ? 'text-base' : 'text-sm'}`}>
+                                                {item.name}
+                                            </span>
+                                        )}
+                                        {showDescriptions && item.description && (
+                                            <span className="text-xs text-gray-400 hidden md:inline-block">
+                                                {item.description}
+                                            </span>
+                                        )}
+                                    </div>
                                 )}
-                                {showDescriptions && item.description && (
-                                    <span className="text-xs text-gray-400 hidden md:inline-block">
-                    {item.description}
-                  </span>
+
+                                {/* Animated dot for active state (only in horizontal layout) */}
+                                {!vertical && (
+                                    <span // Changé NavLink en span (ou div)
+                                        className={`
+                                            absolute -bottom-1 left-1/2 transform -translate-x-1/2
+                                            w-1 h-1 bg-youtube-red rounded-full
+                                            transition-all duration-300
+                                            ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
+                                        `}
+                                        aria-hidden="true" // C'est décoratif
+                                    >
+                                        <span className="sr-only">Lien actif</span> {/* Texte pour lecteur d'écran */}
+                                    </span>
                                 )}
                             </div>
-                        )}
-
-                        {/* Animated dot for active state (only in horizontal layout) */}
-                        {!vertical && (
-                            <NavLink
-                                to={item.href}
-                                className={({ isActive }) => `
-                  absolute -bottom-1 left-1/2 transform -translate-x-1/2
-                  w-1 h-1 bg-youtube-red rounded-full
-                  transition-all duration-300
-                  ${isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
-                `}
-                            >
-                                <span className="sr-only">Active</span>
-                            </NavLink>
                         )}
                     </NavLink>
                 </motion.div>

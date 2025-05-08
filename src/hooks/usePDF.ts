@@ -2,11 +2,12 @@ import { useState } from 'react';
 import pdfService from '@/services/pdfService';
 import APP_CONFIG from '@/config/appConfig';
 
-interface PDFInfo {
+export interface PDFInfo {
     file: File;
     title: string;
     pageCount: number;
     thumbnail: string | null;
+    text?: string; // Ajout du texte extrait
 }
 
 /**
@@ -24,19 +25,28 @@ function usePDF() {
      * Valide et charge un fichier PDF
      */
     const loadPDF = async (file: File): Promise<boolean> => {
+        if (!file) {
+            setError('Aucun fichier fourni');
+            return false;
+        }
+
         setIsLoading(true);
         setError(null);
 
         try {
             // Valider le type et la taille du fichier
-            if (!pdfService.validatePdfFile(file)) {
-                setError(`Le fichier doit être un PDF valide de moins de ${APP_CONFIG.limits.maxPdfSize / (1024 * 1024)}MB`);
+            const isValidPdf = pdfService.validatePdfFile(file);
+            if (!isValidPdf) {
+                setError(`Le fichier doit être un PDF valide de moins de ${Math.round(APP_CONFIG.limits.maxPdfSize / (1024 * 1024))}MB`);
                 setIsLoading(false);
                 return false;
             }
 
             // Extraire les métadonnées
             const { title, pageCount } = await pdfService.extractPdfMetadata(file);
+
+            // Extraire le texte
+            const text = await pdfService.extractTextFromPdf(file);
 
             // Générer une miniature
             const thumbnail = await pdfService.generatePdfThumbnail(file);
@@ -46,13 +56,15 @@ function usePDF() {
                 file,
                 title,
                 pageCount,
-                thumbnail
+                thumbnail,
+                text
             });
 
             setIsLoading(false);
             return true;
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue lors du traitement du PDF';
+            console.error(errorMessage);
             setError(errorMessage);
             setIsLoading(false);
             return false;

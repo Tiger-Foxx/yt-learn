@@ -1076,7 +1076,7 @@ const CreationPage: React.FC = () => {
 };
 
 // PWA Installation Component
-const InstallPWA: React.FC = () => {
+export const InstallPWA: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 

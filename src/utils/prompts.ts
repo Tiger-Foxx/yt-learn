@@ -3,6 +3,8 @@ export const SPEC_FROM_VIDEO_PROMPT = `You are a pedagogist and product designer
 
 Examine the contents of the attached YouTube video. Then, write a detailed and carefully considered spec for an interactive web app designed to complement the video and reinforce its key idea or ideas. The recipient of the spec does not have access to the video, so the spec must be thorough and self-contained (the spec must not mention that it is based on a video).
 
+note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
+
 Build me an interactive web app to help a learner understand the main concepts from this video.
 
 always take into account the additional instructions that arrive (if there are any) these are those of the user, and play the game in the language of these instructions, but the default language of the games and everything is French
@@ -33,6 +35,7 @@ Examine the contents of the attached PDF document. Then, write a detailed and ca
 always take into account the additional instructions that arrive (if there are any) these are those of the user, and play the game in the language of these instructions, but the default language of the games and everything is French
 Build me an interactive web app to help a learner understand the main concepts from this document.
 important : don't limit yourself to just quizzes (but quizzes are current) we want real games to learn, for example if it's something to learn baseball simulate a batsman that we have to position well for example (this example is very basic I know), you are artistically free and even in programming you can even use three js or any other thing importable via CDN without worries everything that is necessary to do things well
+note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
 
 The goal of the app that is to be built based on the spec is to enhance understanding through modern and playful design. The provided spec the specs can be very good with total freedom to use tailwind or 3D if needed, or even 2D objects and keyboard interaction and all I'm talking about real good games, i.e., a semi-senior web developer should be able to implement it in a single HTML file (with all styles and scripts inline and you can use tailwindCss via cdn or bootstrap deoending to situation). Most importantly, the spec must clearly outline the core mechanics of the app, and those mechanics must be highly effective in reinforcing the given document's key idea(s).
 
@@ -60,11 +63,13 @@ IMPORTANT TECHNICAL CONSTRAINTS:
 - few external libraries are allowed, use as possible vanilla JavaScript only. (but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
 - All graphics should be created through HTML/CSS or SVG (no external images or use it if you are sure that the image exist).
 - Provide clear instructions on how to play.
+-  note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
 - Include a progress tracking system and a completion message. (if necessary)
+- use bonomes even if absolutely necessary
 - The code must be well-commented and structured.`;
 
 // Prompt pour générer du code à partir d'une spécification
-export const CODE_FROM_SPEC_PROMPT = `You are an expert HTML5 game developer specialized in creating educational and modern and best web applications.
+export const CODE_FROM_SPEC_PROMPT = `You are an expert HTML5 game developer specialized in creating educational and modern and best web applications , you can also build immersive experience.
 
 Please create a complete, standalone HTML file that implements an interactive educational game application based on the specifications below. The file should include all necessary HTML, CSS, and JavaScript (no external dependencies , but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
 

@@ -1,8 +1,12 @@
 import * as pdfjs from 'pdfjs-dist';
 import APP_CONFIG from '@/config/appConfig';
 
-// Initialiser PDFJS Worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configuration du chemin du worker avec une copie locale
+// Note: Vous devrez ajouter ce fichier à votre dossier public ou le configurer avec Webpack/Vite
+const pdfjsWorkerPath = '/pdf.worker.min.js';
+
+// Initialiser PDFJS Worker avec un chemin relatif
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerPath;
 
 /**
  * Service pour manipuler et extraire du contenu à partir de fichiers PDF
@@ -14,17 +18,21 @@ class PDFService {
     validatePdfFile(file: File): boolean {
         // Vérifier le type MIME
         if (file.type !== 'application/pdf') {
+            console.warn(`Type de fichier invalide: ${file.type}`);
             return false;
         }
 
         // Vérifier l'extension du fichier
         const fileName = file.name.toLowerCase();
         if (!fileName.endsWith('.pdf')) {
+            console.warn(`Extension de fichier invalide: ${fileName}`);
             return false;
         }
 
         // Vérifier la taille
-        if (file.size > APP_CONFIG.limits.maxPdfSize || file.size <= 0) {
+        const maxSizeInBytes = APP_CONFIG.limits.maxPdfSize || 10 * 1024 * 1024; // 10MB par défaut
+        if (file.size > maxSizeInBytes || file.size <= 0) {
+            console.warn(`Taille de fichier invalide: ${file.size} bytes (max: ${maxSizeInBytes} bytes)`);
             return false;
         }
 
@@ -36,8 +44,12 @@ class PDFService {
      */
     async generatePdfThumbnail(file: File, width: number = 200): Promise<string | null> {
         try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDocument = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+            // Convertir le fichier en ArrayBuffer
+            const arrayBuffer = await this.fileToArrayBuffer(file);
+
+            // Charger le document PDF
+            const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+            const pdfDocument = await loadingTask.promise;
 
             // Récupérer la première page
             const page = await pdfDocument.getPage(1);
@@ -76,8 +88,12 @@ class PDFService {
      */
     async extractPdfMetadata(file: File): Promise<{ pageCount: number, title: string }> {
         try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDocument = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+            // Convertir le fichier en ArrayBuffer
+            const arrayBuffer = await this.fileToArrayBuffer(file);
+
+            // Charger le document PDF
+            const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+            const pdfDocument = await loadingTask.promise;
 
             // Obtenir le nombre de pages
             const pageCount = pdfDocument.numPages;
@@ -98,6 +114,53 @@ class PDFService {
             console.error("Erreur lors de l'extraction des métadonnées:", error);
             return { pageCount: 0, title: file.name.replace(/\.pdf$/i, '') };
         }
+    }
+
+    /**
+     * Extrait le texte d'un PDF
+     */
+    async extractTextFromPdf(file: File): Promise<string> {
+        try {
+            // Convertir le fichier en ArrayBuffer
+            const arrayBuffer = await this.fileToArrayBuffer(file);
+
+            // Charger le document PDF
+            const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+            const pdfDocument = await loadingTask.promise;
+
+            // Extraire le texte de toutes les pages
+            let fullText = '';
+            for (let i = 1; i <= pdfDocument.numPages; i++) {
+                const page = await pdfDocument.getPage(i);
+                const textContent = await page.getTextContent();
+                const textItems = textContent.items.map((item: any) => item.str).join(' ');
+                fullText += textItems + '\n\n';
+            }
+
+            return fullText;
+        } catch (error) {
+            console.error("Erreur lors de l'extraction du texte:", error);
+            return '';
+        }
+    }
+
+    /**
+     * Convertit un fichier en ArrayBuffer
+     * @private
+     */
+    private async fileToArrayBuffer(file: File): Promise<ArrayBuffer> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (reader.result instanceof ArrayBuffer) {
+                    resolve(reader.result);
+                } else {
+                    reject(new Error("Le résultat n'est pas un ArrayBuffer"));
+                }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsArrayBuffer(file);
+        });
     }
 }
 
