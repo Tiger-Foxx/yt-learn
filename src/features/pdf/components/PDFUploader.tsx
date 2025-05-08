@@ -1,68 +1,99 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import usePDF from '@/hooks/usePDF';
-import APP_CONFIG from '@/config/appConfig';
+import pdfService from '@/services/pdfService';
 
 interface PDFUploaderProps {
     onPDFUploaded: (text: string, title: string, pageCount: number) => void;
 }
 
 const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
-    const { loadPDF, pdfInfo, isLoading, error } = usePDF();
     const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [file, setFile] = useState<File | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [pdfInfo, setPdfInfo] = useState<{
+        title: string;
+        pageCount: number;
+        text: string;
+        thumbnail: string | null;
+    } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [localError, setLocalError] = useState<string | null>(null);
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setLocalError(null);
+    const resetState = () => {
+        setFile(null);
+        setPdfInfo(null);
+        setError(null);
+    };
 
-            try {
-                const success = await loadPDF(file);
+    const handleProcessPdf = async (selectedFile: File) => {
+        try {
+            setIsLoading(true);
+            setError(null);
 
-                if (success && pdfInfo && pdfInfo.text) {
-                    onPDFUploaded(pdfInfo.text, pdfInfo.title, pdfInfo.pageCount);
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement du PDF:", error);
-                setLocalError("Une erreur est survenue lors du chargement du PDF.");
+            // Valider le fichier
+            if (!pdfService.validatePdfFile(selectedFile)) {
+                throw new Error("Le fichier doit être un PDF valide (maximum 10MB)");
             }
+
+            // Traiter le PDF
+            const processedPdf = await pdfService.processPdf(selectedFile);
+            setPdfInfo(processedPdf);
+
+            // Appeler le callback parent avec les données
+            onPDFUploaded(
+                processedPdf.text,
+                processedPdf.title,
+                processedPdf.pageCount
+            );
+
+            return true;
+        } catch (error) {
+            console.error("Erreur lors du traitement du PDF:", error);
+            setError(error instanceof Error ? error.message : "Erreur lors du traitement du PDF");
+            return false;
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleDragEnter = (e: React.DragEvent) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        resetState();
+
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            await handleProcessPdf(selectedFile);
+        }
+    };
+
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(true);
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(true);
     };
 
-    const handleDragLeave = () => {
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
         setIsDragging(false);
     };
 
-    const handleDrop = async (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(false);
-        setLocalError(null);
+        resetState();
 
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const file = e.dataTransfer.files[0];
-
-            try {
-                const success = await loadPDF(file);
-
-                if (success && pdfInfo && pdfInfo.text) {
-                    onPDFUploaded(pdfInfo.text, pdfInfo.title, pdfInfo.pageCount);
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement du PDF:", error);
-                setLocalError("Une erreur est survenue lors du chargement du PDF.");
-            }
+            const droppedFile = e.dataTransfer.files[0];
+            setFile(droppedFile);
+            await handleProcessPdf(droppedFile);
         }
     };
 
@@ -72,12 +103,12 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                 className={`border-2 border-dashed ${
                     isDragging
                         ? 'border-youtube-red bg-youtube-red/10'
-                        : error || localError
+                        : error
                             ? 'border-red-500 bg-red-500/5'
-                            : pdfInfo
+                            : file && pdfInfo
                                 ? 'border-green-500 bg-green-500/5'
                                 : 'border-gray-700'
-                } rounded-xl p-8 transition-all duration-300 text-center h-64 flex flex-col justify-center items-center`}
+                } rounded-xl p-8 transition-all duration-300 text-center min-h-[200px] flex flex-col justify-center items-center`}
                 onDragEnter={handleDragEnter}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -101,21 +132,20 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                         />
                         <span className="text-gray-400">Analyse du document en cours...</span>
                     </div>
-                ) : pdfInfo ? (
+                ) : file && pdfInfo ? (
                     <div className="flex flex-col items-center">
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1, rotate: [0, 10, 0] }}
-                            transition={{ duration: 0.5 }}
-                            className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mb-2"
-                        >
-                            <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                        </motion.div>
+                        {pdfInfo.thumbnail && (
+                            <div className="w-32 h-40 bg-gray-800 rounded-md overflow-hidden mb-3 flex items-center justify-center">
+                                <img
+                                    src={pdfInfo.thumbnail}
+                                    alt="Aperçu PDF"
+                                    className="w-full h-full object-contain"
+                                />
+                            </div>
+                        )}
 
                         <h3 className="text-lg font-medium text-white mb-1">{pdfInfo.title}</h3>
-                        <p className="text-gray-400 mb-1">{pdfInfo.pageCount} pages • {(pdfInfo.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <p className="text-gray-400 mb-1">{pdfInfo.pageCount} pages • {(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         <p className="text-green-400 font-medium">Document prêt à utiliser</p>
                     </div>
                 ) : (
@@ -128,22 +158,36 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                             {isDragging ? 'Déposez votre document ici' : 'Glissez-déposez votre PDF ici'}
                         </h3>
                         <p className="text-gray-400 mb-2">ou cliquez pour sélectionner un fichier</p>
-                        <p className="text-xs text-gray-500">Format accepté: PDF (max. {Math.round(APP_CONFIG.limits.maxPdfSize / (1024 * 1024))}MB)</p>
-
-                        {(error || localError) && (
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-red-500 mt-2 p-2 bg-red-500/10 rounded-md"
-                            >
-                                {error || localError}
-                            </motion.p>
-                        )}
+                        <p className="text-xs text-gray-500">Format accepté: PDF (max. 10MB)</p>
                     </>
+                )}
+
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-md text-red-400 text-sm max-w-md mx-auto"
+                    >
+                        <p className="flex items-center">
+                            <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 01-1-1v-4a1 1 0 112 0v4a1 1 0 01-1 1z" clipRule="evenodd" />
+                            </svg>
+                            {error}
+                        </p>
+                        <button
+                            className="mt-2 text-white bg-red-500/30 hover:bg-red-500/50 px-3 py-1 rounded text-xs font-medium w-full"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                resetState();
+                            }}
+                        >
+                            Réessayer
+                        </button>
+                    </motion.div>
                 )}
             </div>
 
-            {pdfInfo && (
+            {file && pdfInfo && !error && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -151,8 +195,9 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                 >
                     <button
                         className="px-4 py-2 bg-youtube-red hover:bg-red-700 text-white rounded-md transition-colors flex items-center"
-                        onClick={() => {
-                            if (pdfInfo && pdfInfo.text) {
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (pdfInfo) {
                                 onPDFUploaded(pdfInfo.text, pdfInfo.title, pdfInfo.pageCount);
                             }
                         }}

@@ -27,7 +27,7 @@ const YouTubeInput: React.FC<YouTubeInputProps> = ({ onVideoValidated }) => {
             const result = await validateYouTubeUrl(url);
 
             if (result.isValid && result.videoId && result.videoInfo) {
-                onVideoValidated(result.videoId, result.videoInfo);
+                onVideoValidated(url, result.videoInfo);
             } else {
                 setErrorMessage(result.error || 'URL YouTube invalide');
                 setShowError(true);

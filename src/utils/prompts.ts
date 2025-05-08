@@ -36,6 +36,7 @@ always take into account the additional instructions that arrive (if there are a
 Build me an interactive web app to help a learner understand the main concepts from this document.
 important : don't limit yourself to just quizzes (but quizzes are current) we want real games to learn, for example if it's something to learn baseball simulate a batsman that we have to position well for example (this example is very basic I know), you are artistically free and even in programming you can even use three js or any other thing importable via CDN without worries everything that is necessary to do things well
 note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 
 The goal of the app that is to be built based on the spec is to enhance understanding through modern and playful design. The provided spec the specs can be very good with total freedom to use tailwind or 3D if needed, or even 2D objects and keyboard interaction and all I'm talking about real good games, i.e., a semi-senior web developer should be able to implement it in a single HTML file (with all styles and scripts inline and you can use tailwindCss via cdn or bootstrap deoending to situation). Most importantly, the spec must clearly outline the core mechanics of the app, and those mechanics must be highly effective in reinforcing the given document's key idea(s).
 
@@ -66,13 +67,15 @@ IMPORTANT TECHNICAL CONSTRAINTS:
 -  note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
 - Include a progress tracking system and a completion message. (if necessary)
 - use bonomes even if absolutely necessary
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
+
 - The code must be well-commented and structured.`;
 
 // Prompt pour générer du code à partir d'une spécification
 export const CODE_FROM_SPEC_PROMPT = `You are an expert HTML5 game developer specialized in creating educational and modern and best web applications , you can also build immersive experience.
 
 Please create a complete, standalone HTML file that implements an interactive educational game application based on the specifications below. The file should include all necessary HTML, CSS, and JavaScript (no external dependencies , but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
-
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 Key requirements:
 1. The application must be a single HTML file with ALL code inline (styles in <style> tags, scripts in <script> tags).
 2. Use a YouTube-inspired design with:
@@ -122,6 +125,7 @@ The quiz should be appropriately challenging and cover the most important concep
 
 // Prompt pour générer un quiz à partir d'un PDF
 export const QUIZ_FROM_PDF_PROMPT = `You are an educational content creator specializing in creating quizzes to test comprehension and retention.
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 
 Generate a quiz based on the attached PDF document. The quiz should test understanding of key concepts, facts, and insights from the document.
 
@@ -153,6 +157,7 @@ The quiz should be appropriately challenging and cover the most important concep
 export const FLASHCARDS_FROM_VIDEO_PROMPT = `You are an educational content creator specializing in creating effective flashcards for learning and memorization.
 
 Generate a set of flashcards based on the attached YouTube video. Each flashcard should help learners remember key concepts, definitions, facts, or insights from the video.
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 
 For each flashcard:
 1. Create a clear, concise prompt/question for the front of the card
@@ -178,6 +183,7 @@ The flashcards should focus on the most important concepts worth remembering fro
 export const FLASHCARDS_FROM_PDF_PROMPT = `You are an educational content creator specializing in creating effective flashcards for learning and memorization.
 
 Generate a set of flashcards based on the attached PDF document. Each flashcard should help learners remember key concepts, definitions, facts, or insights from the document.
+note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 
 For each flashcard:
 1. Create a clear, concise prompt/question for the front of the card

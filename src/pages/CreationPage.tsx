@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
 import YouTubeInput from '@/features/youtube/components/YouTubeInput';
@@ -42,6 +42,9 @@ const CreationPage: React.FC = () => {
     const [currentStep, setCurrentStep] = useState<CreationStep>('input');
     const [generatedContent, setGeneratedContent] = useState<string | null>(null);
 
+    // État pour suivre si une URL a été soumise pour validation
+    const [youtubeUrlSubmitted, setYoutubeUrlSubmitted] = useState<string | null>(null);
+
     // Hooks pour YouTube et PDF
     const {
         videoId,
@@ -70,8 +73,6 @@ const CreationPage: React.FC = () => {
 
     // Références pour les animations
     const containerRef = useRef<HTMLDivElement>(null);
-    const headerControls = useAnimation();
-    const contentControls = useAnimation();
 
     // Au chargement initial, vérifier si des données ont été passées via location.state
     useEffect(() => {
@@ -81,7 +82,8 @@ const CreationPage: React.FC = () => {
 
                 if (sourceType === 'youtube' && youtubeUrl) {
                     setActiveTab('youtube');
-                    await handleYouTubeInput(youtubeUrl);
+                    // Utiliser setYoutubeUrlSubmitted pour déclencher la validation
+                    setYoutubeUrlSubmitted(youtubeUrl);
                 }
                 else if (sourceType === 'pdf' && pdfFileName) {
                     setActiveTab('pdf');
@@ -93,19 +95,18 @@ const CreationPage: React.FC = () => {
                     const pdfType = sessionStorage.getItem('pdf-upload-type');
 
                     if (pdfData && pdfName && pdfSize && pdfType) {
-                        // Convertir les données en File
-                        const dataToBlob = async (dataUrl: string) => {
-                            const response = await fetch(dataUrl);
-                            return await response.blob();
-                        };
-
                         try {
-                            const blob = await dataToBlob(pdfData);
+                            // Convertir les données en Blob
+                            const fetchResponse = await fetch(pdfData);
+                            const blob = await fetchResponse.blob();
+
+                            // Créer un fichier à partir du blob
                             const file = new File([blob], pdfName, {
                                 type: pdfType,
                                 lastModified: new Date().getTime()
                             });
 
+                            // Appeler handlePDFUpload avec le fichier créé
                             await handlePDFUpload(file);
                         } catch (error) {
                             console.error("Erreur lors du chargement du PDF:", error);
@@ -118,10 +119,6 @@ const CreationPage: React.FC = () => {
 
         init();
 
-        // Animation d'entrée
-        headerControls.start('visible');
-        contentControls.start('visible');
-
         // Nettoyage
         return () => {
             sessionStorage.removeItem('pdf-upload-data');
@@ -131,38 +128,61 @@ const CreationPage: React.FC = () => {
         };
     }, [location.state]);
 
+    // Effet pour gérer la validation d'URL YouTube quand youtubeUrlSubmitted change
+    useEffect(() => {
+        const validateYoutube = async () => {
+            if (youtubeUrlSubmitted) {
+                const result = await validateYouTubeUrl(youtubeUrlSubmitted);
+                console.log("url a valider: "+youtubeUrlSubmitted)
+
+                if (result.isValid && result.videoId && result.videoInfo) {
+                    setContentSource({
+                        type: 'youtube',
+                        content: "Transcription automatique sera utilisée par l'IA",
+                        title: result.videoInfo.title,
+                        id: result.videoId
+                    });
+
+                    setCurrentStep('configure');
+                } else {
+                    showNotification("URL YouTube invalide. Veuillez entrer une URL valide.", "error");
+                }
+
+                // Réinitialiser pour éviter de revalider la même URL
+                setYoutubeUrlSubmitted(null);
+            }
+        };
+
+        validateYoutube();
+    }, [youtubeUrlSubmitted, validateYouTubeUrl]);
+
     // Handler pour la validation de l'URL YouTube
-    const handleYouTubeInput = async (url: string) => {
-        const result = await validateYouTubeUrl(url);
-
-        if (result.isValid && result.videoId && result.videoInfo) {
-            // Pour YouTube, on considère que le contenu est la transcription
-            // Dans une application réelle, on pourrait extraire la transcription ici
-            setContentSource({
-                type: 'youtube',
-                content: "Transcription automatique sera utilisée par l'IA",
-                title: result.videoInfo.title,
-                id: result.videoId
-            });
-
-            setCurrentStep('configure');
-        }
+    const handleYouTubeInput = (url: string) => {
+        // Utiliser le état pour déclencher la validation
+        setYoutubeUrlSubmitted(url);
     };
 
     // Handler pour l'upload de PDF
     const handlePDFUpload = async (file: File) => {
-        const result = await loadPDF(file);
+        try {
+            const result = await loadPDF(file);
 
-        if (result && pdfInfo) {
-            setContentSource({
-                type: 'pdf',
-                content: "Contenu du PDF sera extrait par l'IA",
-                title: pdfInfo.title,
-                file: pdfInfo.file
-            });
+            if (result && pdfInfo) {
+                setContentSource({
+                    type: 'pdf',
+                    content: "Contenu du PDF sera extrait par l'IA",
+                    title: pdfInfo.title,
+                    file: pdfInfo.file
+                });
 
-            setCurrentStep('configure');
+                setCurrentStep('configure');
+                return true;
+            }
+        } catch (error) {
+            console.error("Erreur lors du traitement du PDF:", error);
+            showNotification("Une erreur est survenue lors du traitement du PDF", "error");
         }
+        return false;
     };
 
     // Handler pour démarrer la génération
@@ -185,16 +205,22 @@ const CreationPage: React.FC = () => {
             additionalInstructions
         };
 
-        const result = await generateContent(options);
+        try {
+            const result = await generateContent(options);
 
-        if (result) {
-            setGeneratedContent(result);
-            setCurrentStep('result');
-            showNotification("Génération réussie!", "success");
-        } else {
-            // Revenir à l'étape de configuration si la génération échoue
+            if (result) {
+                setGeneratedContent(result);
+                setCurrentStep('result');
+                showNotification("Génération réussie!", "success");
+            } else {
+                // Revenir à l'étape de configuration si la génération échoue
+                setCurrentStep('configure');
+                showNotification(generationError || "La génération a échoué", "error");
+            }
+        } catch (error) {
+            console.error("Erreur lors de la génération:", error);
             setCurrentStep('configure');
-            showNotification(generationError || "La génération a échoué", "error");
+            showNotification("Une erreur est survenue lors de la génération", "error");
         }
     };
 
@@ -212,7 +238,7 @@ const CreationPage: React.FC = () => {
         }
     };
 
-    // Animations
+    // Animations corrigées pour éviter l'erreur "Only two keyframes currently supported"
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
@@ -348,7 +374,17 @@ const CreationPage: React.FC = () => {
                                         >
                                             <YouTubeInput
                                                 onVideoValidated={handleYouTubeInput}
+                                                isLoading={isYouTubeLoading}
                                             />
+                                            {youtubeError && (
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400"
+                                                >
+                                                    {youtubeError}
+                                                </motion.div>
+                                            )}
                                         </motion.div>
                                     ) : (
                                         <motion.div
@@ -361,6 +397,15 @@ const CreationPage: React.FC = () => {
                                             <PDFUploader
                                                 onPDFUploaded={handlePDFUpload}
                                             />
+                                            {pdfError && (
+                                                <motion.div
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400"
+                                                >
+                                                    {pdfError}
+                                                </motion.div>
+                                            )}
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
@@ -660,7 +705,7 @@ const CreationPage: React.FC = () => {
                         exit="exit"
                         className="text-center py-16 bg-card-bg rounded-xl border border-gray-800 p-8 relative overflow-hidden"
                     >
-                        {/* Animation de fond avec particules */}
+                        {/* Animation de fond avec particules - Corrigé pour éviter l'erreur framer-motion */}
                         <div className="absolute inset-0 overflow-hidden opacity-30">
                             <div className="absolute top-0 left-0 w-full h-full">
                                 {Array.from({ length: 20 }).map((_, i) => (
@@ -668,14 +713,14 @@ const CreationPage: React.FC = () => {
                                         key={i}
                                         className="absolute bg-gradient-to-r from-youtube-red to-red-600 rounded-full"
                                         initial={{
-                                            x: Math.random() * 100 - 50 + "%",
-                                            y: Math.random() * 100 + "%",
+                                            x: `${Math.random() * 100 - 50}%`,
+                                            y: `${Math.random() * 100}%`,
                                             scale: Math.random() * 0.5 + 0.5,
                                             opacity: Math.random() * 0.5 + 0.25
                                         }}
                                         animate={{
-                                            y: [null, "-100%"],
-                                            opacity: [null, 0]
+                                            y: "-100%",
+                                            opacity: 0
                                         }}
                                         transition={{
                                             duration: Math.random() * 10 + 10,
@@ -683,8 +728,8 @@ const CreationPage: React.FC = () => {
                                             ease: "linear"
                                         }}
                                         style={{
-                                            width: Math.random() * 100 + 20,
-                                            height: Math.random() * 100 + 20,
+                                            width: Math.random() * 115 + 20,
+                                            height: Math.random() * 115 + 20,
                                         }}
                                     />
                                 ))}
@@ -704,9 +749,9 @@ const CreationPage: React.FC = () => {
                                     className="w-24 h-24 border-4 border-youtube-red border-t-transparent rounded-full"
                                 />
 
-                                {/* Animation d'orbite */}
+                                {/* Animation d'orbite - Corrigée */}
                                 <motion.div
-                                    animate={{ rotate: [0, 360] }}
+                                    animate={{ rotate: 360 }}
                                     transition={{
                                         duration: 3,
                                         repeat: Infinity,
@@ -716,10 +761,11 @@ const CreationPage: React.FC = () => {
                                 >
                                     <motion.div
                                         className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-youtube-red rounded-full"
-                                        animate={{ scale: [1, 1.5, 1] }}
+                                        animate={{ scale: [1, 1.5] }}
                                         transition={{
-                                            duration: 2,
+                                            duration: 1,
                                             repeat: Infinity,
+                                            repeatType: "reverse",
                                             ease: "easeInOut"
                                         }}
                                     />
@@ -729,12 +775,13 @@ const CreationPage: React.FC = () => {
                                 <motion.div
                                     className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                                     animate={{
-                                        scale: [0.8, 1, 0.8],
-                                        opacity: [0.7, 1, 0.7]
+                                        scale: [0.8, 1],
+                                        opacity: [0.7, 1]
                                     }}
                                     transition={{
-                                        duration: 2,
+                                        duration: 1,
                                         repeat: Infinity,
+                                        repeatType: "reverse",
                                         ease: "easeInOut"
                                     }}
                                 >
@@ -802,21 +849,21 @@ const CreationPage: React.FC = () => {
                                     Ce processus peut prendre une minute ou deux selon la complexité du contenu.
                                 </p>
                                 <div className="flex flex-wrap justify-center gap-3">
-                  <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-400 text-xs">
-                    Extraction de concepts
-                  </span>
                                     <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-400 text-xs">
-                    Génération de questions
-                  </span>
+                                        Extraction de concepts
+                                    </span>
                                     <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-400 text-xs">
-                    Vérification factuelle
-                  </span>
+                                        Génération de questions
+                                    </span>
                                     <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-400 text-xs">
-                    Design interactif
-                  </span>
+                                        Vérification factuelle
+                                    </span>
+                                    <span className="px-3 py-1 bg-gray-800 rounded-full text-gray-400 text-xs">
+                                        Design interactif
+                                    </span>
                                 </div>
 
-                                {/* Suggestions pendant l'attente */}
+                                {/* Suggestions pendant l'attente - Animation corrigée */}
                                 <div className="mt-8 p-4 bg-gray-800/50 rounded-lg">
                                     <h4 className="text-white font-medium mb-2">En attendant, saviez-vous que...</h4>
                                     <AnimatePresence mode="wait">
@@ -871,9 +918,10 @@ const CreationPage: React.FC = () => {
                                         Votre contenu éducatif est prêt à être utilisé et a été sauvegardé dans votre espace personnel.
                                     </p>
                                 </div>
-                                {/* Animation de confetti */}
+                                {/* Animation de confetti - simplifiée */}
                                 <motion.div
-                                    animate={{ y: [-20, 0], opacity: [0, 1] }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    initial={{ y: -20, opacity: 0 }}
                                     transition={{ delay: 0.5 }}
                                 >
                                     <svg className="w-8 h-8 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
@@ -886,8 +934,8 @@ const CreationPage: React.FC = () => {
                                 <h3 className="text-xl font-bold text-white mb-4 flex flex-wrap items-center gap-3">
                                     {contentSource?.title}
                                     <span className="px-2 py-1 bg-youtube-red/20 text-youtube-red text-xs rounded-md">
-                    {selectedGameType.charAt(0).toUpperCase() + selectedGameType.slice(1)}
-                  </span>
+                                        {selectedGameType.charAt(0).toUpperCase() + selectedGameType.slice(1)}
+                                    </span>
                                 </h3>
 
                                 {generatedContent && (
@@ -897,7 +945,7 @@ const CreationPage: React.FC = () => {
                                             style={{ height: '500px' }}
                                             srcDoc={generatedContent}
                                             title="Contenu généré"
-                                            sandbox="allow-scripts"
+                                            sandbox="allow-scripts allow-same-origin"
                                         />
                                     </div>
                                 )}
@@ -999,7 +1047,7 @@ const CreationPage: React.FC = () => {
                         }
                     }}
                     initial="hidden"
-                    animate={headerControls}
+                    animate="visible"
                     className="mb-10"
                 >
                     <h1 className="text-4xl md:text-5xl font-bold mb-3">
@@ -1017,7 +1065,7 @@ const CreationPage: React.FC = () => {
                 <motion.div
                     variants={containerVariants}
                     initial="hidden"
-                    animate={contentControls}
+                    animate="visible"
                     className="max-w-5xl mx-auto"
                 >
                     <AnimatePresence mode="wait">
@@ -1044,38 +1092,9 @@ const CreationPage: React.FC = () => {
                     </svg>
                 </motion.button>
             </motion.div>
-
-            {/* Installation PWA Banner Component */}
-            <InstallPWA />
-
-            {/* Mobile Tab Navigation */}
-            <div className="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 z-20">
-                <div className="flex justify-around py-3">
-                    <button className="flex flex-col items-center px-3 py-1 rounded-md">
-                        <svg className="w-6 h-6 text-youtube-red" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                        </svg>
-                        <span className="text-xs mt-1 text-gray-300">Accueil</span>
-                    </button>
-                    <button className="flex flex-col items-center px-3 py-1 rounded-md bg-gray-800">
-                        <svg className="w-6 h-6 text-youtube-red" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-xs mt-1 text-white">Créer</span>
-                    </button>
-                    <button className="flex flex-col items-center px-3 py-1 rounded-md">
-                        <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
-                        </svg>
-                        <span className="text-xs mt-1 text-gray-400">Mes contenus</span>
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };
-
-// PWA Installation Component
 export const InstallPWA: React.FC = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -1178,5 +1197,6 @@ export const InstallPWA: React.FC = () => {
         </motion.div>
     );
 };
+
 
 export default CreationPage;

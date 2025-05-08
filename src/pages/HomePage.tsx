@@ -15,14 +15,14 @@ const AnimatedBlobs: React.FC = () => {
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
             {/* Blob 1 - Rouge */}
             <motion.div
-                className="absolute rounded-full bg-gradient-to-r from-youtube-red to-red-600 opacity-20 blur-3xl"
+                className="absolute rounded-full bg-gradient-to-r from-youtube-red to-red-600 opacity-50 blur-3xl"
                 animate={{
                     x: ['-5%', '5%', '-5%'],
                     y: ['-5%', '5%', '-5%'],
-                    scale: [1, 1.05, 1],
+                    scale: [1, 1.5, 0.5],
                 }}
                 transition={{
-                    duration: 2,
+                    duration: 10,
                     repeat: Infinity,
                     ease: "easeInOut",
                 }}
@@ -40,7 +40,7 @@ const AnimatedBlobs: React.FC = () => {
                 animate={{
                     x: ['5%', '-5%', '5%'],
                     y: ['5%', '-5%', '5%'],
-                    scale: [1.05, 1, 1.05],
+                    scale: [1.3, 0.7, 1.3],
                 }}
                 transition={{
                     duration: 25,
@@ -62,13 +62,13 @@ const AnimatedBlobs: React.FC = () => {
                 animate={{
                     x: ['10%', '30%', '10%'],
                     y: ['30%', '10%', '30%'],
-                    scale: [1, 1.2, 1],
+                    scale: [1, 1.3, 1],
                 }}
                 transition={{
                     duration: 15,
                     repeat: Infinity,
                     ease: "easeInOut",
-                    delay: 1,
+                    delay: 2,
                 }}
                 style={{
                     top: '40%',
