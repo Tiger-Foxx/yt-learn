@@ -7,6 +7,7 @@ import Footer from '@/components/layout/Footer';
 import HomePage from '@/pages/HomePage';
 import CreationPage from '@/pages/CreationPage';
 import PlaySpacePage from '@/pages/PlaySpacePage';
+import GamePage from '@/pages/GamePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import APP_CONFIG from '@/config/appConfig';
 import Loader from '@/components/layout/Loader';
@@ -56,7 +57,14 @@ const AnimatedRoutes: React.FC = () => {
                         </motion.div>
                     }
                 />
-
+                <Route
+                    path={APP_CONFIG.routes.game}
+                    element={
+                        <motion.div {...pageTransition}>
+                            <GamePage />
+                        </motion.div>
+                    }
+                />
                 <Route
                     path={APP_CONFIG.routes.notFound}
                     element={
@@ -171,6 +179,27 @@ const App: React.FC = () => {
                     </Router>
                 </div>
             </AppProvider>
+
+            {/* Global styles */}
+            <style jsx global>{`
+                body {
+                    background-color: #0F0F0F;
+                    color: white;
+                    overflow-x: hidden;
+                }
+
+                .bg-dark-bg {
+                    background-color: #0F0F0F;
+                }
+
+                .text-youtube-red {
+                    color: #FF0000;
+                }
+                
+                .bg-youtube-red {
+                    background-color: #FF0000;
+                }
+            `}</style>
         </>
     );
 };

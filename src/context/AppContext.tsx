@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import storageService from '@/services/storageService';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import storageService, { Creation } from '@/services/storageService';
 import APP_CONFIG from '@/config/appConfig';
 
 /**
@@ -21,7 +21,7 @@ interface AppContextType {
     setIsLoading: (loading: boolean) => void;
 
     // État des créations
-    creationHistory: any[];
+    creationHistory: Creation[];
     refreshCreationHistory: () => void;
     deleteCreation: (id: string) => void;
 
@@ -68,8 +68,8 @@ const defaultContextValue: AppContextType = {
     deleteCreation: () => {},
 
     userPreferences: {
-        difficulty: 'moyen',
-        defaultGameType: 'quiz',
+        difficulty: APP_CONFIG.gameOptions.defaultDifficulty,
+        defaultGameType: APP_CONFIG.gameOptions.types[0],
         hasSeenTutorial: false
     },
     updatePreferences: () => {},
@@ -114,7 +114,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false);
 
     // État des créations
-    const [creationHistory, setCreationHistory] = useState<any[]>([]);
+    const [creationHistory, setCreationHistory] = useState<Creation[]>([]);
 
     // État des préférences utilisateur
     const [userPreferences, setUserPreferences] = useState(defaultContextValue.userPreferences);
@@ -132,6 +132,14 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         type: 'success' | 'error' | 'info' | 'warning';
         visible: boolean;
     } | null>(null);
+
+    /**
+     * Fonction pour rafraîchir l'historique des créations
+     */
+    const refreshCreationHistory = useCallback(() => {
+        const history = storageService.getCreationHistory();
+        setCreationHistory(history);
+    }, []);
 
     /**
      * Effet pour charger les préférences utilisateur depuis le localStorage
@@ -159,7 +167,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
         };
-    }, []);
+    }, [refreshCreationHistory]);
 
     /**
      * Effet pour gérer le thème système
@@ -251,18 +259,10 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     };
 
     /**
-     * Fonction pour rafraîchir l'historique des créations
-     */
-    const refreshCreationHistory = () => {
-        const history = storageService.getCreationHistory();
-        setCreationHistory(history);
-    };
-
-    /**
      * Fonction pour supprimer une création
      */
     const deleteCreation = (id: string) => {
-        if (storageService.removeCreationFromHistory(id)) {
+        if (storageService.deleteCreation(id)) {
             refreshCreationHistory();
             showNotification('La création a été supprimée', 'success');
         } else {
@@ -361,12 +361,28 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
                         notification.type === 'error' ? 'bg-red-500' :
                             notification.type === 'warning' ? 'bg-yellow-500' :
                                 'bg-blue-500'
-                } text-white min-w-[300px] max-w-md animate-fade-in-up`}>
+                } text-white min-w-[300px] max-w-md`}
+                     style={{ animation: 'fade-in-up 0.3s ease-out forwards' }}
+                >
                     <p>{notification.message}</p>
                 </div>
             )}
+            <style jsx>{`
+                @keyframes fade-in-up {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `}</style>
         </AppContext.Provider>
     );
 };
+
+export const useAppContext = () => React.useContext(AppContext);
 
 export default AppProvider;

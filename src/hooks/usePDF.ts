@@ -2,140 +2,76 @@ import { useState } from 'react';
 import pdfService from '@/services/pdfService';
 import APP_CONFIG from '@/config/appConfig';
 
+interface PDFInfo {
+    file: File;
+    title: string;
+    pageCount: number;
+    thumbnail: string | null;
+}
+
 /**
- * Hook personnalisé pour gérer les opérations liées aux fichiers PDF
+ * Hook pour gérer les opérations liées aux fichiers PDF
  */
 function usePDF() {
     // État du PDF actuel
-    const [file, setFile] = useState<File | null>(null);
-    const [text, setText] = useState<string | null>(null);
-    const [pageCount, setPageCount] = useState<number>(0);
-    const [title, setTitle] = useState<string>('');
-    const [thumbnail, setThumbnail] = useState<string | null>(null);
+    const [pdfInfo, setPdfInfo] = useState<PDFInfo | null>(null);
 
     // États pour la gestion des erreurs et du chargement
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
-    const [isTooLarge, setIsTooLarge] = useState<boolean>(false);
 
     /**
-     * Valide un fichier PDF (type, taille)
+     * Valide et charge un fichier PDF
      */
-    const validateFile = (fileToCheck: File): boolean => {
-        setError(null);
-
-        // Vérifier le type de fichier
-        if (!pdfService.validatePdfFile(fileToCheck)) {
-            setError('Le fichier doit être un PDF valide');
-            return false;
-        }
-
-        // Vérifier la taille du fichier
-        if (fileToCheck.size > APP_CONFIG.limits.maxPdfSize) {
-            setError(`Le fichier est trop volumineux (max: ${APP_CONFIG.limits.maxPdfSize / (1024 * 1024)}MB)`);
-            setIsTooLarge(true);
-            return false;
-        }
-
-        setIsTooLarge(false);
-        return true;
-    };
-
-    /**
-     * Charge et traite un fichier PDF
-     */
-    const loadPDF = async (fileToLoad: File): Promise<boolean> => {
-        // Valider le fichier
-        if (!validateFile(fileToLoad)) {
-            return false;
-        }
-
+    const loadPDF = async (file: File): Promise<boolean> => {
         setIsLoading(true);
         setError(null);
 
         try {
-            // Extraire le texte du PDF
-            const extractionResult = await pdfService.extractTextFromPdf(fileToLoad);
-
-            if (!extractionResult.success) {
-                throw new Error(extractionResult.error || 'Échec de l\'extraction du texte');
+            // Valider le type et la taille du fichier
+            if (!pdfService.validatePdfFile(file)) {
+                setError(`Le fichier doit être un PDF valide de moins de ${APP_CONFIG.limits.maxPdfSize / (1024 * 1024)}MB`);
+                setIsLoading(false);
+                return false;
             }
 
-            // Mettre à jour les états avec les informations extraites
-            setFile(fileToLoad);
-            setText(extractionResult.text || null);
-            setPageCount(extractionResult.pageCount || 0);
-            setTitle(extractionResult.title || fileToLoad.name);
+            // Extraire les métadonnées
+            const { title, pageCount } = await pdfService.extractPdfMetadata(file);
 
             // Générer une miniature
-            const thumbnailDataUrl = await pdfService.generatePdfThumbnail(fileToLoad);
-            setThumbnail(thumbnailDataUrl);
+            const thumbnail = await pdfService.generatePdfThumbnail(file);
 
+            // Mettre à jour l'état avec les informations du PDF
+            setPdfInfo({
+                file,
+                title,
+                pageCount,
+                thumbnail
+            });
+
+            setIsLoading(false);
             return true;
-        } catch (error) {
-            setError(error instanceof Error ? error.message : 'Erreur lors du traitement du PDF');
+        } catch (e) {
+            const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue lors du traitement du PDF';
+            setError(errorMessage);
+            setIsLoading(false);
             return false;
-        } finally {
-            setIsLoading(false);
         }
     };
 
     /**
-     * Extrait le texte d'une plage de pages spécifique
-     */
-    const extractPageRange = async (startPage: number, endPage: number): Promise<string | null> => {
-        if (!file) {
-            setError('Aucun fichier PDF chargé');
-            return null;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const extractionResult = await pdfService.extractTextFromPageRange(file, startPage, endPage);
-
-            if (!extractionResult.success) {
-                throw new Error(extractionResult.error || 'Échec de l\'extraction des pages');
-            }
-
-            return extractionResult.text || null;
-        } catch (error) {
-            setError(error instanceof Error ? error.message : 'Erreur lors de l\'extraction des pages');
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    /**
-     * Réinitialise tous les états du hook
+     * Réinitialise l'état du PDF
      */
     const reset = () => {
-        setFile(null);
-        setText(null);
-        setPageCount(0);
-        setTitle('');
-        setThumbnail(null);
+        setPdfInfo(null);
         setError(null);
-        setIsLoading(false);
-        setIsTooLarge(false);
     };
 
     return {
-        // États
-        file,
-        text,
-        pageCount,
-        title,
-        thumbnail,
+        pdfInfo,
         isLoading,
         error,
-        isTooLarge,
-
-        // Actions
-        validateFile,
         loadPDF,
-        extractPageRange,
         reset
     };
 }

@@ -1,283 +1,366 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-/* tslint:disable */
-
-import {
-    FinishReason,
-    GenerateContentConfig,
-    GenerateContentParameters,
-    GoogleGenAI,
-    HarmBlockThreshold,
-    HarmCategory,
-    Part,
-    SafetySetting,
-} from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import APP_CONFIG from '@/config/appConfig';
-import { parseJSON, parseHTML } from '@/utils/parsers';
+import { parseJSON } from '@/utils/parsers';
 import {
     SPEC_FROM_VIDEO_PROMPT,
-    CODE_REGION_OPENER,
-    CODE_REGION_CLOSER,
+    SPEC_FROM_PDF_PROMPT,
+    CODE_FROM_SPEC_PROMPT,
+    QUIZ_FROM_VIDEO_PROMPT,
+    QUIZ_FROM_PDF_PROMPT,
+    FLASHCARDS_FROM_VIDEO_PROMPT,
+    FLASHCARDS_FROM_PDF_PROMPT,
     SPEC_ADDENDUM
 } from '@/utils/prompts';
-import { GenerateTextOptions } from '@/types/gemini.types';
 
-const GEMINI_API_KEY = APP_CONFIG.api.gemini.apiKey;
+// Modèle et configuration de l'API
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 /**
- * Generate text content using the Gemini API, optionally including video data.
- *
- * @param options - Configuration options for the generation request.
- * @returns The response from the Gemini API.
+ * Options pour les requêtes Gemini
  */
-export async function generateText(
-    options: GenerateTextOptions,
-): Promise<string> {
-    const {modelName, prompt, videoUrl, temperature = 0.75} = options;
+interface GenerateTextOptions {
+    prompt: string;
+    modelName?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+    videoUrl?: string;
+    pdfContent?: Blob;
+}
 
-    if (!GEMINI_API_KEY) {
-        throw new Error('Gemini API key is missing or empty');
-    }
+/**
+ * Interface pour les spécifications de jeu
+ */
+interface GameSpec {
+    title?: string;
+    description?: string;
+    type?: string;
+    mechanics?: string[];
+    educationalGoals?: string[];
+    difficulty?: string;
+    targetAudience?: string;
+    additionalDetails?: string;
+    addendum?: string;
+    summaryOfVideo_origin_of_the_game?: string;
+}
 
-    const ai = new GoogleGenAI({apiKey: GEMINI_API_KEY});
+/**
+ * Interface pour les quiz générés
+ */
+export interface Quiz {
+    title: string;
+    questions: {
+        question: string;
+        options: string[];
+        reponseCorrecte: number;
+        explication: string;
+    }[];
+}
 
-    const parts: Part[] = [{text: prompt}];
+/**
+ * Interface pour les flashcards générées
+ */
+export interface Flashcards {
+    title: string;
+    cards: {
+        front: string;
+        back: string;
+    }[];
+}
 
-    if (videoUrl) {
-        try {
-            parts.push({
-                fileData: {
+/**
+ * Fonction de base pour générer du texte avec Gemini
+ */
+async function generateText(options: GenerateTextOptions): Promise<string> {
+    try {
+        const {
+            prompt,
+            modelName = APP_CONFIG.api.gemini.models.default,
+            temperature = APP_CONFIG.api.gemini.defaultTemperature,
+            maxOutputTokens = APP_CONFIG.api.gemini.maxOutputTokens,
+            videoUrl,
+            pdfContent
+        } = options;
+
+        const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig: {
+                temperature,
+                maxOutputTokens,
+            },
+        });
+
+        let result;
+
+        if (videoUrl) {
+            // Requête avec URL YouTube
+            result = await model.generateContent([prompt, {  fileData: {
                     mimeType: 'video/mp4',
                     fileUri: videoUrl,
-                },
-            });
-        } catch (error) {
-            console.error('Error processing video input:', error);
-            throw new Error(`Failed to process video input from URL: ${videoUrl}`);
-        }
-    }
-
-    const generationConfig: GenerateContentConfig = {
-        temperature,
-        maxOutputTokens: APP_CONFIG.api.gemini.maxOutputTokens,
-    };
-
-    const request: GenerateContentParameters = {
-        model: modelName,
-        contents: [{role: 'user', parts}],
-        config: generationConfig,
-    };
-
-    try {
-        const response = await ai.models.generateContent(request);
-
-        // Check for prompt blockage
-        if (response.promptFeedback?.blockReason) {
-            throw new Error(
-                `Content generation failed: Prompt blocked (reason: ${response.promptFeedback.blockReason})`,
-            );
+                }, }]);
+        } else if (pdfContent) {
+            // Requête avec fichier PDF
+            const fileAsGenerativePart = {
+                inlineData: {
+                    data: await blobToBase64(pdfContent),
+                    mimeType: "application/pdf"
+                }
+            };
+            result = await model.generateContent([prompt, fileAsGenerativePart]);
+        } else {
+            // Requête texte simple
+            result = await model.generateContent(prompt);
         }
 
-        // Check for response blockage
-        if (!response.candidates || response.candidates.length === 0) {
-            throw new Error('Content generation failed: No candidates returned.');
-        }
-
-        const firstCandidate = response.candidates[0];
-
-        // Check for finish reasons other than STOP
-        if (
-            firstCandidate.finishReason &&
-            firstCandidate.finishReason !== FinishReason.STOP
-        ) {
-            if (firstCandidate.finishReason === FinishReason.SAFETY) {
-                throw new Error(
-                    'Content generation failed: Response blocked due to safety settings.',
-                );
-            } else {
-                throw new Error(
-                    `Content generation failed: Stopped due to ${firstCandidate.finishReason}.`,
-                );
-            }
-        }
-
-        return response.text;
+        const response = await result.response;
+        return response.text();
     } catch (error) {
-        console.error(
-            'An error occurred during Gemini API call or response processing:',
-            error,
-        );
-        throw error;
+        console.error("Erreur lors de la génération de contenu avec Gemini:", error);
+        throw new Error(`Erreur Gemini: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 
 /**
- * Génère une spécification d'application à partir d'une vidéo YouTube
+ * Convertit un Blob en base64
  */
-export async function generateSpecFromVideo(videoUrl: string): Promise<string> {
-    const specResponse = await generateText({
-        modelName: APP_CONFIG.api.gemini.models.videoProcessing,
-        prompt: SPEC_FROM_VIDEO_PROMPT,
-        videoUrl: videoUrl,
+async function blobToBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+                // Enlever le préfixe "data:application/pdf;base64,"
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            } else {
+                reject(new Error("Échec de conversion en base64"));
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
     });
-
-    let spec = parseJSON(specResponse).spec;
-    spec += SPEC_ADDENDUM;
-
-    return spec;
 }
 
 /**
- * Génère du code HTML à partir d'une spécification
+ * 1. Génère une spécification de jeu à partir d'une vidéo YouTube
  */
-export async function generateCodeFromSpec(spec: string): Promise<string> {
-    const codeResponse = await generateText({
-        modelName: APP_CONFIG.api.gemini.models.codeGeneration,
-        prompt: spec,
-    });
+async function generateSpecFromVideo(videoUrl: string, additionalInstructions?: string): Promise<GameSpec> {
+    try {
+        // Créer le prompt complet en ajoutant les instructions supplémentaires
+        let fullPrompt = SPEC_FROM_VIDEO_PROMPT;
+        if (additionalInstructions) {
+            fullPrompt += `\n\nAdditional instructions: ${additionalInstructions}`;
+        }
+        console.log("************** GENERATION DE SPEC DE JEUX PAR VIDEO *****************")
+        console.log("************** PROMPT *****************",fullPrompt , videoUrl)
 
-    const code = parseHTML(
-        codeResponse,
-        CODE_REGION_OPENER,
-        CODE_REGION_CLOSER,
-    );
+        const specResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.videoProcessing,
+            prompt: fullPrompt,
+            videoUrl: videoUrl,
+        });
 
-    console.log('Generated code:', code);
+        console.log("************** SPEC RESPONSE BRUTE *****************",specResponse )
 
-    return code;
+        // Traiter la réponse pour extraire la spec JSON
+        const parsedResponse = parseJSON(specResponse);
+        let spec =  parsedResponse.spec || specResponse;
+        console.log("************** SPEC JUSTE POST PARSING *****************",spec )
+        spec.addendum = SPEC_ADDENDUM;
+
+        console.log("************** SPEC RESPONSE TRAITE *****************",spec )
+
+        return spec as GameSpec;
+    } catch (error) {
+        console.error("Erreur lors de la génération de specs depuis la vidéo:", error);
+        throw new Error(`Échec de la génération de spécifications: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 /**
- * Génère un quiz basé sur le contenu fourni
+ * 2. Génère une spécification de jeu à partir d'un PDF
  */
-export async function generateQuiz(
-    content: string,
+async function generateSpecFromPDF(pdfContent: Blob, additionalInstructions?: string): Promise<GameSpec> {
+    try {
+        // Créer le prompt complet en ajoutant les instructions supplémentaires
+        let fullPrompt = SPEC_FROM_PDF_PROMPT;
+        if (additionalInstructions) {
+            fullPrompt += `\n\nAdditional instructions (from user): ${additionalInstructions}`;
+        }
+        console.log("************** GENERATION DE SPEC DE JEUX PAR pdf *****************")
+        console.log("************** PROMPT *****************",fullPrompt )
+
+        const specResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.pdfProcessing,
+            prompt: fullPrompt,
+            pdfContent: pdfContent,
+        });
+
+        // Traiter la réponse pour extraire la spec JSON
+        const parsedResponse = parseJSON(specResponse);
+        let spec = parsedResponse.spec || specResponse;
+        spec.addendum= SPEC_ADDENDUM;
+
+        return spec as GameSpec;
+    } catch (error) {
+        console.error("Erreur lors de la génération de specs depuis le PDF:", error);
+        throw new Error(`Échec de la génération de spécifications: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 3. Génère du code HTML pour un jeu interactif basé sur les spécifications
+ */
+async function generateCodeFromSpec(spec: string, difficulty: string = APP_CONFIG.gameOptions.defaultDifficulty): Promise<string> {
+    try {
+        const prompt = `${CODE_FROM_SPEC_PROMPT}\n\nDifficulté: ${difficulty}\n\nSpécifications:\n${spec}`;
+        console.log("************** GENERATION DE CODE PAR SPEC *****************")
+        console.log("************** PROMPT *****************",prompt , spec )
+        console.log("********** SPEC *****************",spec )
+
+        const codeResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.codeGeneration,
+            prompt: prompt,
+            temperature: 0.7, // Légère créativité pour le code
+        });
+
+        // Assurez-vous que la réponse est du HTML valide
+        if (!codeResponse.includes('<!DOCTYPE html>') && !codeResponse.includes('<html')) {
+            throw new Error("Le code généré n'est pas un HTML valide");
+        }
+
+        return codeResponse;
+    } catch (error) {
+        console.error("Erreur lors de la génération de code depuis les specs:", error);
+        throw new Error(`Échec de la génération de code: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 4. Génère un quiz directement à partir d'une vidéo YouTube
+ */
+async function generateQuizFromVideo(
+    videoUrl: string,
     difficulty: string = APP_CONFIG.gameOptions.defaultDifficulty,
-    questionCount: number = 14
-): Promise<string> {
-    const prompt = `
-  Génère un quiz interactif à propos du contenu suivant. Le quiz doit être de difficulté ${difficulty} sur une echelle de 1 à 10 et contenir ${questionCount} questions.
-  
-  Pour chaque question, fournir:
-  1. La question elle-même
-  2. 4 options de réponse dont une seule est correcte
-  3. L'option correcte
-  4. Une explication concise de la réponse correcte
-  
-  Formate le résultat en JSON valide avec la structure suivante:
-  {
-    "quiz": {
-      "titre": "Titre du quiz",
-      "questions": [
-        {
-          "question": "Texte de la question",
-          "options": ["Option A", "Option B", "Option C", "Option D"],
-          "reponseCorrecte": 0, // Index de la réponse correcte (0-3)
-          "explication": "Explication de la réponse correcte"
-        },
-        // autres questions
-      ]
-    }
-  }
-  
-  Contenu:
-  ${content}
-  `;
+    questionCount: number = APP_CONFIG.gameOptions.defaultQuestionCount
+): Promise<Quiz> {
+    try {
+        console.log("************** GENERATION DE QUIZZ PAR VIDEO *****************")
+        const prompt = `${QUIZ_FROM_VIDEO_PROMPT}\n\nDifficulté: ${difficulty} sur une echelle de 1 a 10 \nNombre de questions: ${questionCount}`;
+        console.log("************** PROMPT *****************",prompt , videoUrl )
+        const quizResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.quiz,
+            prompt: prompt,
+            videoUrl: videoUrl,
+        });
 
-    return await generateText({
-        prompt,
-        modelName: APP_CONFIG.api.gemini.models.quiz
-    });
+        // Traiter la réponse pour extraire le quiz JSON
+        return parseJSON(quizResponse).quiz;
+    } catch (error) {
+        console.error("Erreur lors de la génération de quiz depuis la vidéo:", error);
+        throw new Error(`Échec de la génération du quiz: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 /**
- * Génère des flashcards basées sur le contenu fourni
+ * 5. Génère un quiz directement à partir d'un PDF
  */
-export async function generateFlashcards(
-    content: string,
-    cardCount: number = 10
-): Promise<string> {
-    const prompt =`
-  Crée un ensemble de ${cardCount} flashcards pédagogiques basées sur le contenu suivant.
-  
-  Les flashcards doivent:
-  - Couvrir les concepts et informations clés du contenu
-  - Présenter une question ou un concept sur le recto
-  - Fournir une réponse ou explication concise sur le verso
-  - Être organisées du concept le plus fondamental au plus avancé
-  
-  Formate le résultat en JSON valide avec la structure suivante:
-  {
-    "flashcards": {
-      "titre": "Titre approprié",
-      "cards": [
-        {
-          "recto": "Question ou concept",
-          "verso": "Réponse ou explication"
-        },
-        // autres cartes
-      ]
-    }
-  }
-  
-  Contenu:
-  ${content}
-  `;
+async function generateQuizFromPDF(
+    pdfContent: Blob,
+    difficulty: string = APP_CONFIG.gameOptions.defaultDifficulty,
+    questionCount: number = APP_CONFIG.gameOptions.defaultQuestionCount
+): Promise<Quiz> {
+    try {
 
-    return await generateText({
-        prompt,
-        modelName: APP_CONFIG.api.gemini.models.flashcards
-    });
+
+        const prompt = `${QUIZ_FROM_PDF_PROMPT}\n\nDifficulté: ${difficulty}\nNombre de questions: ${questionCount}`;
+        console.log("************** GENERATION DE QUIZZ PAR PDF *****************")
+        console.log("************** PROMPT *****************",prompt , pdfContent.slice(0,20) )
+        const quizResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.quiz,
+            prompt: prompt,
+            pdfContent: pdfContent,
+        });
+
+        // Traiter la réponse pour extraire le quiz JSON
+        return parseJSON(quizResponse).quiz;
+    } catch (error) {
+        console.error("Erreur lors de la génération de quiz depuis le PDF:", error);
+        throw new Error(`Échec de la génération du quiz: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 /**
- * Génère un jeu interactif basé sur le contenu fourni
- * Le jeu sera généré sous forme de document HTML autonome
+ * 6. Génère des flashcards à partir d'une vidéo YouTube
  */
-export async function generateInteractiveGame(
-    content: string,
-    gameType: string = APP_CONFIG.gameOptions.types[0]
-): Promise<string> {
-    const prompt = `
-  Crée un jeu interactif de type "${gameType}" basé sur le contenu suivant.
-  
-  Le jeu DOIT être un document HTML autonome et complet incluant tous les styles et scripts nécessaires en ligne ou dans des balises (tu peux aussi te servir de tailwind css en cdn) (inline). 
-  Le jeu doit être prêt à être affiché dans un navigateur, sans dépendances externes (sauf tailwindcss) (du genre a tenir dans un iframe).
-  En fait, tu es un agent IA charge de generer des jeux instructifs et educatifs a partir de sujets de vieos yotube , et toi , tu es l'agent en charge du code , un agent a deja traite la video youtube et extrait le sujet 
-  Le jeu doit:
-  - Être engageant et éducatif
-  - Comporter des éléments interactifs appropriés au type de jeu
-  - Inclure un système de score ou de progression (si necessaire)
-  - Fournir un feedback instructif
-  - Être entièrement fonctionnel dans un seul fichier HTML
-  - Utiliser des styles CSS modernes et attrayants
-  - Être responsive pour s'adapter à différentes tailles d'écran (ca doit meme etre tellement bien responsive que ce sera du mobile first c'est tres important qu'il doit tres mobile friendly)
-  
-  Structure obligatoire:
-  1. Un doctype HTML5 complet
-  2. Tous les styles CSS dans une section <style> dans le <head>
-  3. Tous les scripts JavaScript dans une section <script> à la fin du <body>
-  4. Un design responsive avec des interfaces adaptées mobile et desktop
-  5. Des instructions claires pour l'utilisateur
-  
-  Contenu:
-  ${content}
-  `;
+async function generateFlashcardsFromVideo(
+    videoUrl: string,
+    count: number = APP_CONFIG.gameOptions.defaultFlashcardCount
+): Promise<Flashcards> {
+    try {
+        const prompt = `${FLASHCARDS_FROM_VIDEO_PROMPT}\n\nNombre de flashcards: ${count}`;
 
-    return await generateText({
-        prompt,
-        modelName: APP_CONFIG.api.gemini.models.interactiveGame,
-        temperature: 0.8
-    });
+        const flashcardsResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.flashcards,
+            prompt: prompt,
+            videoUrl: videoUrl,
+        });
+
+        // Traiter la réponse pour extraire les flashcards JSON
+        return parseJSON(flashcardsResponse).flashcards;
+    } catch (error) {
+        console.error("Erreur lors de la génération de flashcards depuis la vidéo:", error);
+        throw new Error(`Échec de la génération des flashcards: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 7. Génère des flashcards à partir d'un PDF
+ */
+async function generateFlashcardsFromPDF(
+    pdfContent: Blob,
+    count: number = APP_CONFIG.gameOptions.defaultFlashcardCount
+): Promise<Flashcards> {
+    try {
+        const prompt = `${FLASHCARDS_FROM_PDF_PROMPT}\n\nNombre de flashcards: ${count}`;
+
+        const flashcardsResponse = await generateText({
+            modelName: APP_CONFIG.api.gemini.models.flashcards,
+            prompt: prompt,
+            pdfContent: pdfContent,
+        });
+
+        // Traiter la réponse pour extraire les flashcards JSON
+        return parseJSON(flashcardsResponse).flashcards;
+    } catch (error) {
+        console.error("Erreur lors de la génération de flashcards depuis le PDF:", error);
+        throw new Error(`Échec de la génération des flashcards: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
+
+/**
+ * 8. Génère une miniature représentative pour une création
+ */
+function generateThumbnail(gameType: string): string {
+    // Génère une fausse miniature basée sur le type de jeu
+    const colors = {
+        quiz: '#3B82F6', // Bleu
+        flashcards: '#10B981', // Vert
+        interactive: '#8B5CF6' // Violet
+    };
+
+    const color = colors[gameType as keyof typeof colors] || '#FF0000'; // Rouge par défaut
+
+    // Crée un SVG simple
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='${color.replace('#', '%23')}'/%3E%3C/svg%3E`;
 }
 
 export default {
-    generateText,
     generateSpecFromVideo,
+    generateSpecFromPDF,
     generateCodeFromSpec,
-    generateQuiz,
-    generateFlashcards,
-    generateInteractiveGame,
+    generateQuizFromVideo,
+    generateQuizFromPDF,
+    generateFlashcardsFromVideo,
+    generateFlashcardsFromPDF,
+    generateThumbnail
 };

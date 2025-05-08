@@ -129,3 +129,21 @@ body {
 .bg-youtube-red {
     background-color: #FF0000;
 }
+
+.bg-dark-bg { background-color: #0F0F0F; }
+.bg-darker-bg { background-color: #080808; }
+.bg-card-bg { background-color: #1A1A1A; }
+.text-youtube-red { color: #FF0000; }
+.bg-youtube-red { background-color: #FF0000; }
+.border-youtube-red { border-color: #FF0000; }
+.shadow-glow { filter: drop-shadow(0 0 4px currentColor); }
+.glow-text { text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }
+
+@keyframes pulse-glow {
+    0%, 100% { filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.7)); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 0, 0, 1)); }
+}
+
+.animate-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}

@@ -13,15 +13,17 @@ export const APP_CONFIG = {
         gemini: {
             apiKey: import.meta.env.VITE_GEMINI_API_KEY,
             models: {
-                default: 'gemini-pro',
+                default: 'gemini-2.0-flash',
                 videoProcessing: 'gemini-2.0-flash',
-                codeGeneration: 'gemini-2.5-pro-preview-03-25',
+                codeGeneration: 'gemini-2.5-pro-exp-03-25',//gemini-2.5-pro-preview-03-25 or gemini-2.5-pro-exp-03-25
                 quiz: 'gemini-2.0-flash',
                 flashcards: 'gemini-2.0-flash',
-                interactiveGame: 'gemini-2.0-flash'
+                interactiveGame: 'gemini-2.0-flash',
+                pdfProcessing: "gemini-2.0-flash"
             },
-            maxOutputTokens: 8192,
-            temperature: 0.7,
+            maxOutputTokens: 81920,
+            temperature: 0.7, defaultTemperature: 0.7,
+
         },
         youtube: {
             baseUrl: 'https://www.googleapis.com/youtube/v3',
@@ -31,17 +33,20 @@ export const APP_CONFIG = {
     },
 
     // Limites et paramètres
+    // Limites pour les fichiers et le stockage
     limits: {
-        maxVideoLength: 20 * 60, // 20 minutes en secondes
-        maxPdfSize: 10 * 1024 * 1024, // 10 MB
-        maxStorageItems: 50, // Nombre maximum d'éléments dans le localStorage
+        maxPdfSize: 10 * 1024 * 1024, // 10MB
+        maxStorageItems: 100,
+        maxContentLength: 15000 // Limite pour le contenu envoyé à l'API
     },
 
     // Options de jeu
     gameOptions: {
-        types: ['quiz', 'flashcards', 'interactif'],
+        types: ['quiz', 'flashcards', 'interactive'],
         difficultyLevels: ['facile', 'moyen', 'difficile'],
-        defaultDifficulty: 'moyen'
+        defaultDifficulty: 'moyen',
+        defaultQuestionCount: 10,
+        defaultFlashcardCount: 15
     },
 
     // Chemins des routes
@@ -67,11 +72,11 @@ export const APP_CONFIG = {
 
     // Configuration du stockage
     storage: {
-        prefix: 'ytl_',
-        gameHistoryKey: 'game_history',
-        userPreferencesKey: 'user_prefs',
-        installPromptKey: 'install_prompt_shown'
-    }
+        prefix: 'ytlearn-',
+        installPromptKey: 'install-prompt',
+        creationsKey: 'creations',
+        userPreferencesKey: 'preferences'
+    },
 };
 
 export default APP_CONFIG;

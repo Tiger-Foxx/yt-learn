@@ -3,30 +3,31 @@ import APP_CONFIG from '@/config/appConfig';
 /**
  * Types pour le service de stockage
  */
-interface StorageItem {
+export interface StorageItem {
     id: string;
     createdAt: number;
     updatedAt: number;
     [key: string]: any;
 }
 
-interface CreationHistoryItem extends StorageItem {
+export interface Creation extends StorageItem {
+    id: string;
     title: string;
     type: 'youtube' | 'pdf';
     sourceUrl?: string;
     sourceFileName?: string;
     thumbnail?: string;
-    gameType: 'quiz' | 'flashcards' | 'interactif';
-    content: string; // Contenu HTML généré
-    metadata: {
-        difficulty?: string;
+    gameType: 'quiz' | 'flashcards' | 'interactive';
+    content: string; // Contenu HTML complet du jeu
+    difficulty?: string;
+    metadata?: {
         questions?: number;
         duration?: number;
         [key: string]: any;
     };
 }
 
-interface UserPreferences {
+export interface UserPreferences {
     theme: 'light' | 'dark' | 'system';
     difficulty: string;
     defaultGameType: string;
@@ -47,7 +48,7 @@ class StorageService {
     /**
      * Génère une clé préfixée pour le stockage
      */
-    private getKey(key: string): string {
+    getKey(key: string): string {
         return `${this.prefix}${key}`;
     }
 
@@ -112,14 +113,27 @@ class StorageService {
     /**
      * Récupère l'historique des créations
      */
-    getCreationHistory(): CreationHistoryItem[] {
-        return this.getItem<CreationHistoryItem[]>(APP_CONFIG.storage.gameHistoryKey, []);
+    getCreationHistory(): Creation[] {
+        return this.getItem<Creation[]>('creations', []);
     }
 
     /**
      * Ajoute une création à l'historique
      */
-    addCreationToHistory(creation: CreationHistoryItem): boolean {
+    addCreation(creation: {
+        sourceUrl?: string;
+        difficulty?: string;
+        gameType?: "quiz" | "flashcards" | "interactive";
+        createdAt: number;
+        sourceFileName?: string;
+        thumbnail?: string;
+        metadata?: { questions?: number; duration?: number; [p: string]: any };
+        id: string;
+        title?: string;
+        type?: "youtube" | "pdf";
+        content?: string;
+        updatedAt: number
+    }): boolean {
         try {
             const history = this.getCreationHistory();
 
@@ -134,7 +148,7 @@ class StorageService {
             history.push(creation);
 
             // Enregistrer l'historique mis à jour
-            return this.setItem(APP_CONFIG.storage.gameHistoryKey, history);
+            return this.setItem('creations', history);
         } catch (error) {
             console.error('Erreur lors de l\'ajout à l\'historique des créations:', error);
             return false;
@@ -144,11 +158,11 @@ class StorageService {
     /**
      * Supprime une création de l'historique
      */
-    removeCreationFromHistory(id: string): boolean {
+    deleteCreation(id: string): boolean {
         try {
             const history = this.getCreationHistory();
             const updatedHistory = history.filter(item => item.id !== id);
-            return this.setItem(APP_CONFIG.storage.gameHistoryKey, updatedHistory);
+            return this.setItem('creations', updatedHistory);
         } catch (error) {
             console.error('Erreur lors de la suppression de la création:', error);
             return false;
@@ -158,7 +172,7 @@ class StorageService {
     /**
      * Récupère une création spécifique par ID
      */
-    getCreationById(id: string): CreationHistoryItem | null {
+    getCreationById(id: string): Creation | null {
         try {
             const history = this.getCreationHistory();
             return history.find(item => item.id === id) || null;
@@ -179,7 +193,7 @@ class StorageService {
             hasSeenTutorial: false
         };
 
-        return this.getItem<UserPreferences>(APP_CONFIG.storage.userPreferencesKey, defaultPreferences);
+        return this.getItem<UserPreferences>('preferences', defaultPreferences);
     }
 
     /**
@@ -189,7 +203,7 @@ class StorageService {
         try {
             const currentPreferences = this.getUserPreferences();
             const updatedPreferences = { ...currentPreferences, ...preferences };
-            return this.setItem(APP_CONFIG.storage.userPreferencesKey, updatedPreferences);
+            return this.setItem('preferences', updatedPreferences);
         } catch (error) {
             console.error('Erreur lors de la mise à jour des préférences utilisateur:', error);
             return false;
@@ -199,56 +213,15 @@ class StorageService {
     /**
      * Vérifie si l'alerte d'installation a déjà été affichée
      */
-    hasShownInstallPrompt(): boolean|null {
-        return this.getItem<boolean>(APP_CONFIG.storage.installPromptKey, false);
+    hasShownInstallPrompt(): boolean {
+        return this.getItem<boolean>('install-prompt', false);
     }
 
     /**
      * Marque l'alerte d'installation comme affichée
      */
     markInstallPromptAsShown(): void {
-        this.setItem(APP_CONFIG.storage.installPromptKey, true);
-    }
-
-    /**
-     * Exporte toutes les données utilisateur sous forme de fichier JSON
-     */
-    exportUserData(): string {
-        const userData = {
-            creations: this.getCreationHistory(),
-            preferences: this.getUserPreferences(),
-            timestamp: new Date().toISOString(),
-            appVersion: APP_CONFIG.appVersion
-        };
-
-        return JSON.stringify(userData, null, 2);
-    }
-
-    /**
-     * Importe les données utilisateur depuis un fichier JSON
-     */
-    importUserData(jsonData: string): boolean {
-        try {
-            const userData = JSON.parse(jsonData);
-
-            // Valider les données
-            if (!userData.creations || !Array.isArray(userData.creations)) {
-                throw new Error('Format de données invalide: creations');
-            }
-
-            if (!userData.preferences || typeof userData.preferences !== 'object') {
-                throw new Error('Format de données invalide: preferences');
-            }
-
-            // Importer les données
-            this.setItem(APP_CONFIG.storage.gameHistoryKey, userData.creations);
-            this.setItem(APP_CONFIG.storage.userPreferencesKey, userData.preferences);
-
-            return true;
-        } catch (error) {
-            console.error('Erreur lors de l\'importation des données:', error);
-            return false;
-        }
+        this.setItem('install-prompt', true);
     }
 
     /**
