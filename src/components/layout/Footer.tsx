@@ -39,33 +39,29 @@ const Footer: React.FC = () => {
                 { name: 'Accueil', to: APP_CONFIG.routes.home },
                 { name: 'Explorer', to: APP_CONFIG.routes.playspace },
                 { name: 'Créer', to: APP_CONFIG.routes.creation },
-                { name: 'Comment ça marche', to: '#how-it-works' },
             ]
         },
         {
             title: 'Ressources',
             links: [
-                { name: 'Tutoriels', to: '#tutorials' },
-                { name: 'Documentation API', to: '#api-docs' },
-                { name: 'Blog', to: '#blog' },
-                { name: 'FAQ', to: '#faq' },
+                { name: 'Blog', to: 'https://theoldfox.pythonanywhere.com/blog' },
+                { name: 'FAQ', to: '/faq' },
             ]
         },
         {
             title: 'Société',
             links: [
-                { name: 'À propos', to: '#about' },
-                { name: 'Contact', to: '#contact' },
-                { name: 'Carrières', to: '#careers' },
-                { name: 'Presse', to: '#press' },
+                { name: 'À propos', to: '/about' },
+                { name: 'Contact', to: '/contact' },
+
             ]
         },
         {
             title: 'Légal',
             links: [
-                { name: 'Conditions d\'utilisation', to: '#terms' },
-                { name: 'Politique de confidentialité', to: '#privacy' },
-                { name: 'Mentions légales', to: '#legal' },
+                { name: 'Conditions d\'utilisation', to: '/privacy' },
+                { name: 'Politique de confidentialité', to: '/privacy' },
+                { name: 'Mentions légales', to: '/privacy' },
             ]
         }
     ];
@@ -185,31 +181,15 @@ const Footer: React.FC = () => {
                     variants={itemVariants}
                     className="border-t border-gray-800 pt-8 mt-12 md:flex md:items-center md:justify-between"
                 >
-                    <div className="flex space-x-6 md:order-2">
-                        {/* App download links */}
-                        <div className="flex items-center space-x-4">
-                            <span className="text-sm text-gray-400">Téléchargez notre app:</span>
-                            <a href="#app-store" className="text-gray-400 hover:text-white transition-colors">
-                                <svg className="h-6" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 10h-2v2h2v6h3v-6h1.82l.18-2h-2v-.833c0-.478.096-.667.558-.667h1.442v-2.5h-2.404c-1.798 0-2.596.792-2.596 2.308v1.692z"/>
-                                </svg>
-                            </a>
-                            <a href="#google-play" className="text-gray-400 hover:text-white transition-colors">
-                                <svg className="h-6" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm-2 5.75l5.5 4.25-5.5 4.25v-8.5z"/>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
+
 
                     <div className="mt-8 md:mt-0 md:order-1 text-gray-400 text-sm">
                         <div className="flex flex-col md:flex-row md:items-center md:space-x-4">
                             <p>&copy; {currentYear} YTLearn. Tous droits réservés.</p>
                             <div className="hidden md:block">|</div>
                             <div className="flex space-x-4 mt-2 md:mt-0">
-                                <Link to="#terms" className="hover:text-youtube-red transition-colors">Conditions</Link>
-                                <Link to="#privacy" className="hover:text-youtube-red transition-colors">Confidentialité</Link>
-                                <Link to="#cookies" className="hover:text-youtube-red transition-colors">Cookies</Link>
+                                <Link to="/privacy" className="hover:text-youtube-red transition-colors">Conditions</Link>
+                                <Link to="/privacy" className="hover:text-youtube-red transition-colors">Confidentialité</Link>
                             </div>
                         </div>
                     </div>

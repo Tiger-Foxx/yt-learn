@@ -163,6 +163,7 @@ const CreationPage: React.FC = () => {
     };
 
     // Handler pour l'upload de PDF
+// Et aussi mettre à jour la fonction handlePDFUpload:
     const handlePDFUpload = async (file: File) => {
         try {
             const result = await loadPDF(file);
@@ -170,9 +171,9 @@ const CreationPage: React.FC = () => {
             if (result && pdfInfo) {
                 setContentSource({
                     type: 'pdf',
-                    content: "Contenu du PDF sera extrait par l'IA",
+                    content: "Contenu du PDF sera traité directement par l'IA",
                     title: pdfInfo.title,
-                    file: pdfInfo.file
+                    file: file
                 });
 
                 setCurrentStep('configure');
@@ -184,7 +185,6 @@ const CreationPage: React.FC = () => {
         }
         return false;
     };
-
     // Handler pour démarrer la génération
     const handleStartGeneration = async () => {
         if (!contentSource) return;
@@ -395,7 +395,11 @@ const CreationPage: React.FC = () => {
                                             transition={{ duration: 0.5 }}
                                         >
                                             <PDFUploader
-                                                onPDFUploaded={handlePDFUpload}
+                                                onPDFUploaded={(file) => {
+                                                    if (file) {
+                                                        handlePDFUpload(file);
+                                                    }
+                                                }}
                                             />
                                             {pdfError && (
                                                 <motion.div

@@ -4,7 +4,7 @@
 // Import l'auto-généré sw précache manifestation
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open('mood-music-v1').then((cache) => {
+        caches.open('yt-learn').then((cache) => {
             return cache.addAll([
                 '/',
                 '/index.html',
@@ -24,7 +24,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.filter((cacheName) => {
-                    return cacheName !== 'mood-music-v1';
+                    return cacheName !== 'yt-learn';
                 }).map((cacheName) => {
                     return caches.delete(cacheName);
                 })
@@ -42,7 +42,7 @@ self.addEventListener('fetch', (event) => {
                 .then((response) => {
                     if (response.status === 200) {
                         const responseClone = response.clone();
-                        caches.open('mood-music-v1').then((cache) => {
+                        caches.open('yt-learn').then((cache) => {
                             cache.put(event.request, responseClone);
                         });
                     }

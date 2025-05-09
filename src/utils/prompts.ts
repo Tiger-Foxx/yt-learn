@@ -61,7 +61,7 @@ IMPORTANT TECHNICAL CONSTRAINTS:
 - The game must be contained in a single HTML file with inline CSS and JavaScript.
 - The design should use a YouTube-inspired color theme (red: #FF0000, dark background: #0F0F0F, card background: #1A1A1A). (or better but red is an important color)
 - The game must be fully responsive and work well on mobile devices.
-- few external libraries are allowed, use as possible vanilla JavaScript only. (but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
+- you can use as many external js and even css libraries as you want (but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
 - All graphics should be created through HTML/CSS or SVG (no external images or use it if you are sure that the image exist).
 - Provide clear instructions on how to play.
 -  note : If you have the possibility, also avoid boring click-to-click games, sometimes you can even allow yourself simulations or more dynamic things. The AI is very strong and will be able to code, so no need to stay in basic things.
@@ -74,7 +74,7 @@ note: tes contenus doivent se faire en francais si aucune langue n'est spcifie
 // Prompt pour générer du code à partir d'une spécification
 export const CODE_FROM_SPEC_PROMPT = `You are an expert HTML5 game developer specialized in creating educational and modern and best web applications , you can also build immersive experience.
 
-Please create a complete, standalone HTML file that implements an interactive educational game application based on the specifications below. The file should include all necessary HTML, CSS, and JavaScript (no external dependencies , but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
+Please create a complete, standalone HTML file that implements an interactive educational game application based on the specifications below. The file should include all necessary HTML, CSS, and JavaScript (you can use as many external js and even css libraries as you want , but you can use bootstrap or tailwind , or any js dependency if its obligaotry to make the best ).
 note: tes contenus doivent se faire en francais si aucune langue n'est spcifie 
 Key requirements:
 1. The application must be a single HTML file with ALL code inline (styles in <style> tags, scripts in <script> tags).
@@ -91,6 +91,7 @@ Key requirements:
 8. Ensure the game works across browsers.
 9. Use semantic HTML and accessible design principles.(if necessary)
 10. Use clean, well-commented code.
+important : When it comes to making games they must be attractive and not boring, sometimes even do 2D or 3D simulations when necessary, we want interactive and fun things and often colorful, but above all very educational
 
 YOUR GOAL IS SOLELY TO GENERATE A COMPLETE HTML FILE. DO NOT PROVIDE ANY EXPLANATION OR COMMENTS OUTSIDE OF THE HTML FILE.`;
 

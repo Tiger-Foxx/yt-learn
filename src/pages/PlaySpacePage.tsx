@@ -1,23 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, useAnimation, useInView } from 'framer-motion';
+import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import APP_CONFIG from '@/config/appConfig';
 import useCreation from "@/hooks/useCreation";
+import html2canvas from 'html2canvas';
 
 const PlaySpacePage: React.FC = () => {
     const navigate = useNavigate();
     const { creationHistory, deleteCreation } = useCreation();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<string | null>(null);
+    const [filterSource, setFilterSource] = useState<string | null>(null);
     const [selectedCreation, setSelectedCreation] = useState<string | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [contentToDelete, setContentToDelete] = useState<string | null>(null);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const headerRef = useRef(null);
     const isHeaderInView = useInView(headerRef, { once: true });
     const headerControls = useAnimation();
     const gridRef = useRef(null);
     const isGridInView = useInView(gridRef, { once: true, amount: 0.1 });
     const gridControls = useAnimation();
+
+    // État pour le tri
+    const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     // Trigger animations when elements come into view
     useEffect(() => {
@@ -29,13 +36,39 @@ const PlaySpacePage: React.FC = () => {
         }
     }, [isHeaderInView, isGridInView, headerControls, gridControls]);
 
-    // Filter creations based on search term and filter
-    const filteredCreations = creationHistory.filter(creation => {
-        return (
-            (filterType === null || creation.gameType === filterType) &&
-            (searchTerm === '' || creation.title.toLowerCase().includes(searchTerm.toLowerCase()))
-        );
-    });
+    // Filter and sort creations
+    const filteredCreations = creationHistory
+        .filter(creation => {
+            // Filter by type
+            if (filterType !== null && creation.gameType !== filterType) {
+                return false;
+            }
+
+            // Filter by source (YouTube/PDF)
+            if (filterSource !== null && creation.type !== filterSource) {
+                return false;
+            }
+
+            // Filter by search term
+            if (searchTerm && !creation.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+                return false;
+            }
+
+            return true;
+        })
+        .sort((a, b) => {
+            // Sort by date
+            if (sortBy === 'date') {
+                return sortOrder === 'desc'
+                    ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            }
+
+            // Sort by title
+            return sortOrder === 'desc'
+                ? b.title.localeCompare(a.title)
+                : a.title.localeCompare(b.title);
+        });
 
     // Handle delete confirmation
     const handleDeleteConfirm = () => {
@@ -45,6 +78,103 @@ const PlaySpacePage: React.FC = () => {
             setContentToDelete(null);
             setSelectedCreation(null);
         }
+    };
+
+    // Function to download HTML content
+    const downloadHtmlContent = async (creation) => {
+        try {
+            setDownloadingId(creation.id);
+
+            // // Fetch HTML content for the selected game
+            // const response = await fetch(`/api/game/${creation.id}/html`);
+            // if (!response.ok) {
+            //     throw new Error('Failed to fetch HTML content');
+            // }
+            if (!creation.content){
+                return
+            }
+            const htmlContent = creation.content;
+
+            // Create a blob with the HTML content
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            // Create a download link and trigger the download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${creation.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            // Give feedback
+            setDownloadingId(null);
+        } catch (error) {
+            console.error("Error downloading HTML:", error);
+            setDownloadingId(null);
+
+            // Show error message
+            alert('Erreur lors du téléchargement du HTML. Veuillez réessayer.');
+        }
+    };
+
+    // Generate default thumbnail for different game types
+    const getDefaultThumbnail = (gameType, title) => {
+        // Background colors for different game types
+        const bgColors = {
+            quiz: 'from-blue-600 to-blue-900',
+            flashcards: 'from-green-600 to-green-900',
+            interactive: 'from-purple-600 to-purple-900'
+        };
+
+        // Icons for different game types
+        const icon = () => {
+            switch (gameType) {
+                case 'quiz':
+                    return (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+                        </svg>
+                    );
+                case 'flashcards':
+                    return (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8V9zm0-3h8v2h-8V6zm0 6h4v2h-4v-2z"/>
+                        </svg>
+                    );
+                case 'interactive':
+                default:
+                    return (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h18v8zM6 15h2v-2h2v-2H8V9H6v2H4v2h2z"/>
+                            <circle cx="14.5" cy="13.5" r="1.5"/>
+                            <circle cx="18.5" cy="10.5" r="1.5"/>
+                        </svg>
+                    );
+            }
+        };
+
+        // Get initials from title
+        const getInitials = (title) => {
+            return title
+                .split(' ')
+                .slice(0, 2)
+                .map(word => word[0])
+                .join('')
+                .toUpperCase();
+        };
+
+        return (
+            <div className={`w-full h-full bg-gradient-to-br ${bgColors[gameType] || 'from-gray-700 to-gray-900'} flex flex-col items-center justify-center p-4`}>
+                {icon()}
+                <div className="mt-4 text-xl font-bold text-white">
+                    {getInitials(title)}
+                </div>
+            </div>
+        );
     };
 
     // Animation variants
@@ -103,33 +233,120 @@ const PlaySpacePage: React.FC = () => {
     const renderFilterButtons = () => {
         return (
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-                <motion.button
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setFilterType(null)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                        filterType === null
-                            ? 'bg-youtube-red text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                >
-                    Tous
-                </motion.button>
-
-                {APP_CONFIG.gameOptions.types.map(type => (
-                    <motion.button
-                        key={type}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => setFilterType(type)}
+                {/* Game Type Filters */}
+                <div className="flex flex-wrap gap-2 mb-2 w-full md:w-auto">
+                    <button
+                        onClick={() => setFilterType(null)}
                         className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                            filterType === type
+                            filterType === null
                                 ? 'bg-youtube-red text-white'
                                 : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                         }`}
                     >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </motion.button>
-                ))}
+                        Tous types
+                    </button>
 
+                    {APP_CONFIG.gameOptions.types.map(type => (
+                        <button
+                            key={type}
+                            onClick={() => setFilterType(type)}
+                            className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                                filterType === type
+                                    ? 'bg-youtube-red text-white'
+                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                            }`}
+                        >
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Source Type Filters */}
+                <div className="flex flex-wrap gap-2 mb-2 w-full md:w-auto">
+                    <button
+                        onClick={() => setFilterSource(null)}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                            filterSource === null
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        Toutes sources
+                    </button>
+
+                    <button
+                        onClick={() => setFilterSource('youtube')}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors flex items-center ${
+                            filterSource === 'youtube'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                        </svg>
+                        YouTube
+                    </button>
+
+                    <button
+                        onClick={() => setFilterSource('pdf')}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors flex items-center ${
+                            filterSource === 'pdf'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                        </svg>
+                        PDF
+                    </button>
+                </div>
+
+                {/* Sort Options */}
+                <div className="flex flex-wrap gap-2 ml-auto">
+                    <button
+                        onClick={() => {
+                            setSortBy('date');
+                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors flex items-center ${
+                            sortBy === 'date'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d={sortBy === 'date' && sortOrder === 'asc'
+                                ? "M8 11h3v10h2V11h3l-4-4-4 4zM4 3v2h16V3H4z"
+                                : "M16 13h-3V3h-2v10H8l4 4 4-4zM4 19v2h16v-2H4z"}
+                            />
+                        </svg>
+                        Date
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            setSortBy('title');
+                            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+                        }}
+                        className={`px-3 py-1 rounded-full text-sm transition-colors flex items-center ${
+                            sortBy === 'title'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                        }`}
+                    >
+                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                            <path d={sortBy === 'title' && sortOrder === 'asc'
+                                ? "M14.94 4.66h-4.72l2.36-2.36zm-4.69 14.71h4.66l-2.33 2.33zM6.1 6.27L1.6 17.73h1.84l.92-2.45h5.11l.92 2.45h1.84L7.74 6.27H6.1zm-1.13 7.37l1.94-5.18 1.94 5.18H4.97zm10.76 2.5h6.12v1.59h-8.53v-1.29l5.92-8.56h-5.88v-1.6h8.3v1.26l-5.93 8.6z"
+                                : "M14.94 4.66h-4.72l2.36-2.36zm-4.69 14.71h4.66l-2.33 2.33zM6.1 6.27L1.6 17.73h1.84l.92-2.45h5.11l.92 2.45h1.84L7.74 6.27H6.1zm-1.13 7.37l1.94-5.18 1.94 5.18H4.97zm10.76 2.5h6.12v1.59h-8.53v-1.29l5.92-8.56h-5.88v-1.6h8.3v1.26l-5.93 8.6z"}
+                            />
+                        </svg>
+                        Titre
+                    </button>
+                </div>
+
+                {/* Create Button */}
                 <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -146,7 +363,7 @@ const PlaySpacePage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-dark-bg text-white py-24 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen bg-dark-bg text-white py-7 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto relative">
                 {/* Background decorations */}
                 <div className="absolute top-20 right-0 w-64 h-64 bg-youtube-red opacity-5 rounded-full blur-3xl"></div>
@@ -164,7 +381,7 @@ const PlaySpacePage: React.FC = () => {
                         variants={itemVariants}
                         className="text-4xl md:text-5xl font-bold mb-3"
                     >
-                        Mes <span className="text-youtube-red">Espaces</span> d'Apprentissage
+                        Mon <span className="text-youtube-red">Espace</span> d'Apprentissage
                     </motion.h1>
 
                     <motion.div
@@ -176,7 +393,7 @@ const PlaySpacePage: React.FC = () => {
                         variants={itemVariants}
                         className="text-gray-400 text-xl max-w-3xl mb-10"
                     >
-                        Retrouvez et jouez avec tous vos contenus éducatifs générés par l'IA pour une expérience d'apprentissage immersive.
+                        Retrouvez et jouez avec tous vos contenus éducatifs générés par l'IA.
                     </motion.p>
 
                     {/* Search and filter section */}
@@ -224,7 +441,7 @@ const PlaySpacePage: React.FC = () => {
                     animate={gridControls}
                 >
                     {filteredCreations.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                             {filteredCreations.map((creation, index) => (
                                 <motion.div
                                     key={creation.id}
@@ -236,62 +453,69 @@ const PlaySpacePage: React.FC = () => {
                                     className="h-full"
                                 >
                                     <div
-                                        className="bg-card-bg rounded-xl overflow-hidden h-full border border-gray-800 shadow-lg cursor-pointer transform transition-transform duration-300"
+                                        className="bg-card-bg rounded-xl overflow-hidden h-full border border-gray-800 shadow-lg cursor-pointer transform transition-transform duration-300 group"
                                         onClick={() => setSelectedCreation(creation.id === selectedCreation ? null : creation.id)}
                                     >
                                         {/* Card Header - Thumbnail */}
-                                        <div className="relative overflow-hidden">
-                                            <div className="h-40 bg-gradient-to-br from-gray-900 to-youtube-red/40 flex items-center justify-center overflow-hidden">
-                                                {creation.thumbnail ? (
-                                                    <img
-                                                        src={creation.thumbnail}
-                                                        alt={creation.title}
-                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                                    />
-                                                ) : (
-                                                    <div className="transform transition-transform">
-                                                        {creation.gameType === 'quiz' ? (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/70" viewBox="0 0 24 24" fill="currentColor">
-                                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-14v2h2V6h-2zm0 4v8h2v-8h-2z"/>
-                                                            </svg>
-                                                        ) : creation.gameType === 'flashcards' ? (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/70" viewBox="0 0 24 24" fill="currentColor">
-                                                                <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zM10 9h8v2h-8V9zm0-3h8v2h-8V6zm0 6h4v2h-4v-2z" />
-                                                            </svg>
-                                                        ) : (
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white/70" viewBox="0 0 24 24" fill="currentColor">
-                                                                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 10H3V8h18v8zM6 15h2v-2h2v-2H8V9H6v2H4v2h2z"/>
-                                                                <circle cx="14.5" cy="13.5" r="1.5"/>
-                                                                <circle cx="18.5" cy="10.5" r="1.5"/>
-                                                            </svg>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                {/* Play button overlay */}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
-                                                    <div>
-                            <span className="px-2 py-1 bg-youtube-red/80 text-white text-xs rounded-md backdrop-blur-sm">
-                              {creation.gameType.toUpperCase()}
-                            </span>
-                                                    </div>
-                                                    <div>
-                            <span className="text-xs text-white/80">
-                              {new Date(creation.createdAt).toLocaleDateString()}
-                            </span>
-                                                    </div>
+                                        <div className="relative overflow-hidden h-40">
+                                            {creation.thumbnail ? (
+                                                <img
+                                                    src={creation.thumbnail}
+                                                    alt={creation.title}
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full">
+                                                    {getDefaultThumbnail(creation.gameType, creation.title)}
                                                 </div>
+                                            )}
 
-                                                {/* Type indicator */}
-                                                <div className="absolute top-3 right-3">
-                                                    <div className={`
-                            w-2 h-2 rounded-full
-                            ${creation.gameType === 'quiz' ? 'bg-blue-500' :
-                                                        creation.gameType === 'flashcards' ? 'bg-green-500' :
-                                                            'bg-purple-500'} 
-                            animate-pulse
-                          `}></div>
+                                            {/* Play button overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-between p-4">
+                                                <div>
+                                                    <span className={`px-2 py-1 text-white text-xs rounded-md backdrop-blur-sm ${
+                                                        creation.gameType === 'quiz' ? 'bg-blue-600/80' :
+                                                            creation.gameType === 'flashcards' ? 'bg-green-600/80' :
+                                                                'bg-purple-600/80'
+                                                    }`}>
+                                                        {creation.gameType.toUpperCase()}
+                                                    </span>
                                                 </div>
+                                                <div>
+                                                    <span className="text-xs text-white/80">
+                                                        {new Date(creation.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Type indicator */}
+                                            <div className="absolute top-3 right-3">
+                                                <div className={`
+                                                    w-2 h-2 rounded-full
+                                                    ${creation.gameType === 'quiz' ? 'bg-blue-500' :
+                                                    creation.gameType === 'flashcards' ? 'bg-green-500' :
+                                                        'bg-purple-500'} 
+                                                    animate-pulse
+                                                `}></div>
+                                            </div>
+
+                                            {/* Play button with animation */}
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <motion.div
+                                                    initial={{ scale: 0 }}
+                                                    whileHover={{ scale: 1.1 }}
+                                                    whileTap={{ scale: 0.9 }}
+                                                    animate={{ scale: 1 }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`${APP_CONFIG.routes.game.replace(':id', creation.id)}`);
+                                                    }}
+                                                    className="bg-youtube-red/90 text-white rounded-full w-12 h-12 flex items-center justify-center backdrop-blur-sm"
+                                                >
+                                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M8 5v14l11-7z" />
+                                                    </svg>
+                                                </motion.div>
                                             </div>
                                         </div>
 
@@ -323,42 +547,66 @@ const PlaySpacePage: React.FC = () => {
                                         </div>
 
                                         {/* Expanded Actions */}
-                                        {selectedCreation === creation.id && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="p-4 border-t border-gray-800 bg-gray-900/50"
-                                            >
-                                                <div className="flex space-x-2">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            navigate(`${APP_CONFIG.routes.game.replace(':id', creation.id)}`);
-                                                        }}
-                                                        className="flex-1 bg-youtube-red hover:bg-red-700 text-white py-2 px-3 rounded-md text-sm transition-colors flex items-center justify-center"
-                                                    >
-                                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M8 5v14l11-7z" />
-                                                        </svg>
-                                                        Jouer
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setContentToDelete(creation.id);
-                                                            setIsDeleteModalOpen(true);
-                                                        }}
-                                                        className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-3 rounded-md text-sm transition-colors flex items-center justify-center"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                                                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        )}
+                                        <AnimatePresence>
+                                            {selectedCreation === creation.id && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className="p-4 border-t border-gray-800 bg-gray-900/50"
+                                                >
+                                                    <div className="flex space-x-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate(`${APP_CONFIG.routes.game.replace(':id', creation.id)}`);
+                                                            }}
+                                                            className="flex-1 bg-youtube-red hover:bg-red-700 text-white py-2 px-3 rounded-md text-sm transition-colors flex items-center justify-center"
+                                                        >
+                                                            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M8 5v14l11-7z" />
+                                                            </svg>
+                                                            Jouer
+                                                        </button>
+
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                downloadHtmlContent(creation);
+                                                            }}
+                                                            disabled={downloadingId === creation.id}
+                                                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-md text-sm transition-colors flex items-center justify-center"
+                                                        >
+                                                            {downloadingId === creation.id ? (
+                                                                <svg className="w-4 h-4 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                                </svg>
+                                                            ) : (
+                                                                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                                    <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                                                                </svg>
+                                                            )}
+                                                            HTML
+                                                        </button>
+
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setContentToDelete(creation.id);
+                                                                setIsDeleteModalOpen(true);
+                                                            }}
+                                                            className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-3 rounded-md text-sm transition-colors flex items-center justify-center"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 </motion.div>
                             ))}
@@ -385,7 +633,7 @@ const PlaySpacePage: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                {searchTerm || filterType
+                                {searchTerm || filterType || filterSource
                                     ? 'Aucun résultat trouvé'
                                     : 'Votre espace est vide'}
                             </motion.h3>
@@ -396,12 +644,33 @@ const PlaySpacePage: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                {searchTerm || filterType
+                                {searchTerm || filterType || filterSource
                                     ? 'Essayez de modifier vos filtres ou votre recherche'
                                     : "Commencez par créer votre premier contenu éducatif. L'IA transformera vos vidéos YouTube ou documents en expériences d'apprentissage interactives."}
                             </motion.p>
 
-                            {!searchTerm && !filterType && (
+                            {/* Reset filters button */}
+                            {(searchTerm || filterType || filterSource) && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 }}
+                                >
+                                    <button
+                                        onClick={() => {
+                                            setSearchTerm('');
+                                            setFilterType(null);
+                                            setFilterSource(null);
+                                        }}
+                                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors mr-4"
+                                    >
+                                        Réinitialiser les filtres
+                                    </button>
+                                </motion.div>
+                            )}
+
+                            {/* Create button if empty */}
+                            {!searchTerm && !filterType && !filterSource && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -495,42 +764,49 @@ const PlaySpacePage: React.FC = () => {
             </div>
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
+            <AnimatePresence>
+                {isDeleteModalOpen && (
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.9, opacity: 0 }}
-                        className="bg-gray-900 rounded-xl p-6 border border-gray-800 max-w-md w-full"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
                     >
-                        <div className="text-center mb-6">
-                            <div className="bg-red-500/10 w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center">
-                                <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z" />
-                                </svg>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-gray-900 rounded-xl p-6 border border-gray-800 max-w-md w-full"
+                        >
+                            <div className="text-center mb-6">
+                                <div className="bg-red-500/10 w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                    <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Confirmer la suppression</h3>
+                                <p className="text-gray-400 mb-6">
+                                    Êtes-vous sûr de vouloir supprimer ce contenu ? Cette action est irréversible.
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Confirmer la suppression</h3>
-                            <p className="text-gray-400 mb-6">
-                                Êtes-vous sûr de vouloir supprimer ce contenu ? Cette action est irréversible.
-                            </p>
-                        </div>
-                        <div className="flex space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                onClick={handleDeleteConfirm}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition-colors"
-                            >
-                                Supprimer
-                            </button>
-                        </div>
+                            <div className="flex space-x-3">
+                                <button
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors"
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleDeleteConfirm}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition-colors"
+                                >
+                                    Supprimer
+                                </button>
+                            </div>
+                        </motion.div>
                     </motion.div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
 
             {/* Mobile Floating Button */}
             <motion.div
@@ -550,9 +826,6 @@ const PlaySpacePage: React.FC = () => {
                     </svg>
                 </motion.button>
             </motion.div>
-
-            {/* Style specific to this page */}
-
         </div>
     );
 };

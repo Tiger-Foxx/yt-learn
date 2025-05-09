@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import pdfService from '@/services/pdfService';
 
 interface PDFUploaderProps {
-    onPDFUploaded: (text: string, title: string, pageCount: number) => void;
+    onPDFUploaded: (file: File) => void;
 }
 
 const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
@@ -11,17 +11,12 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [pdfInfo, setPdfInfo] = useState<{
-        title: string;
-        pageCount: number;
-        text: string;
-        thumbnail: string | null;
-    } | null>(null);
+    const [fileName, setFileName] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const resetState = () => {
         setFile(null);
-        setPdfInfo(null);
+        setFileName(null);
         setError(null);
     };
 
@@ -30,21 +25,18 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
             setIsLoading(true);
             setError(null);
 
-            // Valider le fichier
+            // Vérifier si le fichier est un PDF valide
             if (!pdfService.validatePdfFile(selectedFile)) {
                 throw new Error("Le fichier doit être un PDF valide (maximum 10MB)");
             }
 
-            // Traiter le PDF
-            const processedPdf = await pdfService.processPdf(selectedFile);
-            setPdfInfo(processedPdf);
+            // Extraire le nom du fichier pour l'affichage
+            const info = await pdfService.extractBasicInfo(selectedFile);
+            setFileName(info.title);
 
-            // Appeler le callback parent avec les données
-            onPDFUploaded(
-                processedPdf.text,
-                processedPdf.title,
-                processedPdf.pageCount
-            );
+            // Appeler le callback avec le fichier PDF directement
+            // C'est Gemini qui traitera le contenu du PDF
+            onPDFUploaded(selectedFile);
 
             return true;
         } catch (error) {
@@ -105,7 +97,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                         ? 'border-youtube-red bg-youtube-red/10'
                         : error
                             ? 'border-red-500 bg-red-500/5'
-                            : file && pdfInfo
+                            : file && fileName
                                 ? 'border-green-500 bg-green-500/5'
                                 : 'border-gray-700'
                 } rounded-xl p-8 transition-all duration-300 text-center min-h-[200px] flex flex-col justify-center items-center`}
@@ -132,20 +124,21 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                         />
                         <span className="text-gray-400">Analyse du document en cours...</span>
                     </div>
-                ) : file && pdfInfo ? (
+                ) : file && fileName ? (
                     <div className="flex flex-col items-center">
-                        {pdfInfo.thumbnail && (
-                            <div className="w-32 h-40 bg-gray-800 rounded-md overflow-hidden mb-3 flex items-center justify-center">
-                                <img
-                                    src={pdfInfo.thumbnail}
-                                    alt="Aperçu PDF"
-                                    className="w-full h-full object-contain"
-                                />
-                            </div>
-                        )}
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.5 }}
+                            className="w-14 h-14 bg-green-500/20 rounded-full flex items-center justify-center mb-2"
+                        >
+                            <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                        </motion.div>
 
-                        <h3 className="text-lg font-medium text-white mb-1">{pdfInfo.title}</h3>
-                        <p className="text-gray-400 mb-1">{pdfInfo.pageCount} pages • {(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        <h3 className="text-lg font-medium text-white mb-1">{fileName}</h3>
+                        <p className="text-gray-400 mb-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         <p className="text-green-400 font-medium">Document prêt à utiliser</p>
                     </div>
                 ) : (
@@ -187,7 +180,7 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                 )}
             </div>
 
-            {file && pdfInfo && !error && (
+            {file && fileName && !error && (
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -197,8 +190,15 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                         className="px-4 py-2 bg-youtube-red hover:bg-red-700 text-white rounded-md transition-colors flex items-center"
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (pdfInfo) {
-                                onPDFUploaded(pdfInfo.text, pdfInfo.title, pdfInfo.pageCount);
+                            if (file) {
+                                onPDFUploaded(file);
+                            }
+                        }}
+
+                        onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            if (file) {
+                                onPDFUploaded(file);
                             }
                         }}
                     >

@@ -9,8 +9,13 @@ import CreationPage from '@/pages/CreationPage';
 import PlaySpacePage from '@/pages/PlaySpacePage';
 import GamePage from '@/pages/GamePage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import AboutPage from '@/pages/AboutPage';
+import FAQPage from '@/pages/FAQPage';
+import PrivacyPolicyPage from '@/pages/PrivacyPolicyPage';
+import ContactPage from '@/pages/ContactPage';
 import APP_CONFIG from '@/config/appConfig';
 import Loader from '@/components/layout/Loader';
+import InstallPWAPrompt from '@/components/pwa/InstallPWAPrompt';
 import './App.css';
 
 // Composant de routage avec animations
@@ -62,6 +67,38 @@ const AnimatedRoutes: React.FC = () => {
                     element={
                         <motion.div {...pageTransition}>
                             <GamePage />
+                        </motion.div>
+                    }
+                />
+                <Route
+                    path={APP_CONFIG.routes.about}
+                    element={
+                        <motion.div {...pageTransition}>
+                            <AboutPage />
+                        </motion.div>
+                    }
+                />
+                <Route
+                    path={APP_CONFIG.routes.faq}
+                    element={
+                        <motion.div {...pageTransition}>
+                            <FAQPage />
+                        </motion.div>
+                    }
+                />
+                <Route
+                    path={APP_CONFIG.routes.privacy}
+                    element={
+                        <motion.div {...pageTransition}>
+                            <PrivacyPolicyPage />
+                        </motion.div>
+                    }
+                />
+                <Route
+                    path={APP_CONFIG.routes.contact}
+                    element={
+                        <motion.div {...pageTransition}>
+                            <ContactPage />
                         </motion.div>
                     }
                 />
@@ -175,12 +212,13 @@ const App: React.FC = () => {
                             </main>
 
                             <Footer />
+
+                            {/* Prompt d'installation PWA - affiché sur toutes les pages */}
+                            <InstallPWAPrompt />
                         </div>
                     </Router>
                 </div>
             </AppProvider>
-
-
         </>
     );
 };

@@ -1,11 +1,11 @@
 ﻿{
-  "name": "Mood Music",
-  "short_name": "MoodMusic",
-  "description": "Découvrez la musique qui correspond à votre humeur, et les lieux que vous voulez",
+  "name": "YT-Learn",
+  "short_name": "YT-Learn",
+  "description": "Transformez vos vidéos et documents en expériences d'apprentissage interactives",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0c29",
-  "theme_color": "#302b63",
+  "background_color": "#111111",
+  "theme_color": "#ff0000",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -15,7 +15,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/mood-249.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -23,25 +23,25 @@
   ],
   "shortcuts": [
     {
-      "name": "Analyser mon humeur",
-      "short_name": "Humeur",
-      "description": "Analyser mon humeur pour des recommandations musicales",
-      "url": "/mood-space",
+      "name": "Créer du contenu",
+      "short_name": "Créer",
+      "description": "Commencer à créer du contenu éducatif",
+      "url": "/creation",
       "icons": [
         {
-          "src": "/icons/mood-192.png",
+          "src": "/favicon.png",
           "sizes": "192x192"
         }
       ]
     },
     {
-      "name": "Musique par localisation",
-      "short_name": "Location",
-      "description": "Découvrir la musique par localisation",
-      "url": "/location-music",
+      "name": "Mes créations",
+      "short_name": "Créations",
+      "description": "Voir mes créations éducatives",
+      "url": "/playspace",
       "icons": [
         {
-          "src": "/icons/mood-192.png",
+          "src": "/favicon.png",
           "sizes": "192x192"
         }
       ]
@@ -53,19 +53,26 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Écran d'accueil de Mood Music"
+      "label": "Écran d'accueil de YT-Learn"
     },
     {
-      "src": "/screenshots/mood-space.png",
+      "src": "/screenshots/exemples.png",
       "sizes": "750x1334",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Analyse d'humeur sur Mood Music"
+      "label": "Exemples de créations sur YT-Learn"
+    },
+    {
+      "src": "/screenshots/create.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Espace de création sur YT-Learn"
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
-  "categories": ["music", "entertainment", "lifestyle"],
+  "categories": ["education", "productivity", "utilities","IA","youtube","game"],
   "lang": "fr-FR",
   "serviceworker": {
     "src": "/service-worker.js",

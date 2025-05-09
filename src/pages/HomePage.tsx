@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import {motion, AnimatePresence, useAnimation} from 'framer-motion';
 import { useAppContext } from '@/context/AppContext';
 import APP_CONFIG from '@/config/appConfig';
 import useYouTube from '@/hooks/useYouTube';
@@ -8,22 +8,57 @@ import usePDF from '@/hooks/usePDF';
 import { exampleCreations } from '@/data/exampleCreations';
 import storageService, { Creation } from '@/services/storageService';
 import {InstallPWA} from "@/pages/CreationPage.tsx";
+import Lottie from 'react-lottie';
+import fluidAnimationData from '@/assets/fluid-animation.json';
 
-// Composant pour les blobs animés en arrière-plan
+interface FluidEffectProps {
+    loop?: boolean;
+    autoplay?: boolean;
+    animationData?: any; // Le type exact dépend de votre fichier JSON Lottie
+    rendererSettings?: {
+        preserveAspectRatio: string;
+    };
+    height?: string | number;
+    width?: string | number;
+    opacity?: number;
+}
+// Composant pour les particules fluides (mobile)
+const FluidEffect: React.FC<FluidEffectProps> = ({loop = true, autoplay = true, animationData = fluidAnimationData, rendererSettings = { preserveAspectRatio: 'xMidYMid slice' }, height = "100%", width = "100%", opacity = 0.4,}) => {
+    const defaultOptions = {
+        loop,
+        autoplay,
+        animationData,
+        rendererSettings,
+        height,
+        width,
+    };
+
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
+            <Lottie
+                options={defaultOptions}
+                style={{ opacity }}
+            />
+        </div>
+    );
+};
+
+// Composant pour les blobs animés en arrière-plan (desktop)
 const AnimatedBlobs: React.FC = () => {
     return (
-        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none hidden md:block">
             {/* Blob 1 - Rouge */}
             <motion.div
                 className="absolute rounded-full bg-gradient-to-r from-youtube-red to-red-600 opacity-50 blur-3xl"
                 animate={{
-                    x: ['-5%', '5%', '-5%'],
-                    y: ['-5%', '5%', '-5%'],
-                    scale: [1, 1.5, 0.5],
+                    x: ['-5%', '5%'],
+                    y: ['-5%', '5%'],
+                    scale: [1, 1.5]
                 }}
                 transition={{
                     duration: 10,
                     repeat: Infinity,
+                    repeatType: "reverse",
                     ease: "easeInOut",
                 }}
                 style={{
@@ -38,13 +73,14 @@ const AnimatedBlobs: React.FC = () => {
             <motion.div
                 className="absolute rounded-full bg-gradient-to-r from-red-600 to-red-700 opacity-20 blur-3xl"
                 animate={{
-                    x: ['5%', '-5%', '5%'],
-                    y: ['5%', '-5%', '5%'],
-                    scale: [1.3, 0.7, 1.3],
+                    x: ['5%', '-5%'],
+                    y: ['5%', '-5%'],
+                    scale: [1.3, 0.7]
                 }}
                 transition={{
                     duration: 25,
                     repeat: Infinity,
+                    repeatType: "reverse",
                     ease: "easeInOut",
                     delay: 2,
                 }}
@@ -60,13 +96,14 @@ const AnimatedBlobs: React.FC = () => {
             <motion.div
                 className="absolute rounded-full bg-gradient-to-r from-youtube-red to-yellow-500 opacity-10 blur-3xl"
                 animate={{
-                    x: ['10%', '30%', '10%'],
-                    y: ['30%', '10%', '30%'],
-                    scale: [1, 1.3, 1],
+                    x: ['10%', '30%'],
+                    y: ['30%', '10%'],
+                    scale: [1, 1.3]
                 }}
                 transition={{
                     duration: 15,
                     repeat: Infinity,
+                    repeatType: "reverse",
                     ease: "easeInOut",
                     delay: 2,
                 }}
@@ -80,6 +117,15 @@ const AnimatedBlobs: React.FC = () => {
         </div>
     );
 };
+
+// Logo Fox
+const FoxLogo: React.FC = () => (
+    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 opacity-50 hover:opacity-100 transition-opacity z-10">
+        <p className="text-xs text-gray-400 font-light">
+            Designed by <span className="font-semibold">Fox</span>
+        </p>
+    </div>
+);
 
 // Composant pour l'effet de texte glitch
 const TextGlitch: React.FC<{ text: string; className?: string }> = ({ text, className = '' }) => {
@@ -131,8 +177,41 @@ const TextGlitch: React.FC<{ text: string; className?: string }> = ({ text, clas
     return <span className={className}>{displayText}</span>;
 };
 
-// Composant HeroTitle avec animation avancée
-const HeroTitle: React.FC = () => {
+// Composant HeroTitle avec animation avancée - Version Mobile Optimisée
+const HeroTitle: React.FC<{isMobile: boolean}> = ({ isMobile }) => {
+    if (isMobile) {
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                className="relative text-center"
+            >
+                <motion.h1
+                    className="text-4xl md:text-6xl xl:text-7xl font-bold text-white mb-6 relative z-10 tracking-tighter leading-tight"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                >
+                    <motion.span className="block mb-2 tracking-wide">
+                        Vivez votre
+                    </motion.span>
+                    <motion.span
+                        className="block text-youtube-red relative  mb-2"
+                        // animate={{ scale: [1, 1.05, 1] }}
+                        // transition={{ duration: 2, repeat: Infinity }}
+                    >
+                        Apprentissage
+                    </motion.span>
+                    <motion.span className="block text-sm font-light tracking-widest mt-4 text-gray-300">
+                        AVEC FUN (et.. un peu d'IA)
+                    </motion.span>
+                </motion.h1>
+                <div className="w-16 h-1 bg-youtube-red rounded-full mx-auto"></div>
+            </motion.div>
+        );
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -170,9 +249,18 @@ const Card3D: React.FC<{ children: React.ReactNode; className?: string; onClick?
     const [rotateX, setRotateX] = useState(0);
     const [rotateY, setRotateY] = useState(0);
     const [scale, setScale] = useState(1);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current) return;
+        if (isMobile || !cardRef.current) return;
 
         const card = cardRef.current;
         const rect = card.getBoundingClientRect();
@@ -203,16 +291,22 @@ const Card3D: React.FC<{ children: React.ReactNode; className?: string; onClick?
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             onClick={onClick}
-            style={{
-                transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
-                transformStyle: 'preserve-3d'
-            }}
+            style={
+                isMobile
+                    ? {}
+                    : {
+                        transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`,
+                        transformStyle: 'preserve-3d'
+                    }
+            }
         >
             {children}
-            <div
-                className="absolute inset-0 rounded-xl bg-gradient-to-r from-youtube-red to-red-500 opacity-0 hover:opacity-20 transition-opacity"
-                style={{ transform: 'translateZ(-10px)' }}
-            />
+            {!isMobile && (
+                <div
+                    className="absolute inset-0 rounded-xl bg-gradient-to-r from-youtube-red to-red-500 opacity-0 hover:opacity-20 transition-opacity"
+                    style={{ transform: 'translateZ(-10px)' }}
+                />
+            )}
         </div>
     );
 };
@@ -329,145 +423,83 @@ const AnimatedSearchField: React.FC<{
     );
 };
 
-// Composant pour le téléchargement de PDF avec animation
-const AnimatedPDFUploader: React.FC<{ onFileSelect: (file: File) => void }> = ({ onFileSelect }) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [file, setFile] = useState<File | null>(null);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
-            onFileSelect(selectedFile);
-        }
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(false);
-
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const droppedFile = e.dataTransfer.files[0];
-            if (droppedFile.type === "application/pdf") {
-                setFile(droppedFile);
-                onFileSelect(droppedFile);
-            }
-        }
-    };
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = () => {
-        setIsDragging(false);
-    };
-
+// Bouton avec effet de pulse et hover avancé
+const AnimatedButton: React.FC<{
+    children: React.ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    className?: string;
+    iconOnly?: boolean;
+}> = ({ children, onClick, disabled = false, className = '', iconOnly = false }) => {
     return (
-        <motion.div
+        <motion.button
+            onClick={onClick}
+            disabled={disabled}
+            className={`relative overflow-hidden ${
+                iconOnly
+                    ? "mt-6 bg-youtube-red text-white font-bold w-12 h-12 rounded-full flex items-center justify-center"
+                    : "mt-6 bg-youtube-red text-white font-bold py-3 px-8 rounded-full text-lg"
+            } transition-all disabled:opacity-70 disabled:hover:scale-100 disabled:hover:bg-youtube-red disabled:hover:shadow-none ${className}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mt-8"
+            transition={{ delay: 0.8, duration: 0.5 }}
+            whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(255, 0, 0, 0.4)' }}
+            whileTap={{ scale: 0.98 }}
         >
-            <div
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                className={`border-2 border-dashed ${isDragging ? 'border-youtube-red bg-youtube-red/10' : file ? 'border-green-500 bg-green-500/10' : 'border-gray-600'} rounded-xl p-10 text-center cursor-pointer transition-colors duration-300 hover:border-youtube-red hover:bg-youtube-red/5`}
-            >
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept=".pdf"
-                    className="hidden"
-                />
-
-                {file ? (
-                    <div className="space-y-2">
-                        <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1, rotate: [0, 10, 0] }}
-                            transition={{ type: "spring", damping: 10 }}
-                            className="w-14 h-14 mx-auto bg-green-500/20 rounded-full flex items-center justify-center"
-                        >
-                            <svg className="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                        </motion.div>
-
-                        <h3 className="text-lg font-medium text-white">{file.name}</h3>
-                        <p className="text-gray-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                        <p className="text-green-400 font-medium">PDF prêt pour la génération</p>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        <svg className="w-14 h-14 mx-auto text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                        </svg>
-
-                        <h3 className="text-lg font-medium text-white">Déposez votre PDF ici</h3>
-                        <p className="text-gray-400">ou cliquez pour parcourir vos fichiers</p>
-                        <p className="text-gray-500 text-sm">Format supporté: PDF (max 10MB)</p>
-                    </div>
-                )}
-            </div>
-
-            {file && (
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 flex justify-end"
-                >
-                    <button
-                        className="bg-youtube-red hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
-                        onClick={() => {
-                            if (file) onFileSelect(file);
-                        }}
-                    >
-                        <span>Continuer avec ce PDF</span>
-                        <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </button>
-                </motion.div>
-            )}
-        </motion.div>
+            <motion.span
+                className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"
+                initial={{ x: '-100%', opacity: 0.5 }}
+                animate={{ x: '100%', opacity: 0 }}
+                transition={{
+                    repeat: Infinity,
+                    duration: 1.5,
+                    ease: "easeInOut",
+                }}
+            />
+            {children}
+        </motion.button>
     );
 };
 
-// Bouton avec effet de pulse et hover avancé
-const AnimatedButton: React.FC<{ children: React.ReactNode; onClick?: () => void; disabled?: boolean; className?: string }> =
-    ({ children, onClick, disabled = false, className = '' }) => {
-        return (
-            <motion.button
-                onClick={onClick}
-                disabled={disabled}
-                className={`relative overflow-hidden mt-6 bg-youtube-red text-white font-bold py-3 px-8 rounded-full text-lg transition-all disabled:opacity-70 disabled:hover:scale-100 disabled:hover:bg-youtube-red disabled:hover:shadow-none ${className}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.5 }}
-                whileHover={{ scale: 1.05, boxShadow: '0 10px 25px -5px rgba(255, 0, 0, 0.4)' }}
-                whileTap={{ scale: 0.98 }}
-            >
-                <motion.span
-                    className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-400"
-                    initial={{ x: '-100%', opacity: 0.5 }}
-                    animate={{ x: ['0%', '100%'], opacity: [0.5, 0] }}
-                    transition={{
-                        repeat: Infinity,
-                        duration: 1.5,
-                        ease: "easeInOut",
-                    }}
-                />
-                {children}
-            </motion.button>
-        );
-    };
+// Générer des icônes par défaut pour les miniatures manquantes en fonction du type
+const DefaultThumbnail: React.FC<{type: string}> = ({ type }) => {
+    let icon;
+    let bgColor;
+
+    switch(type) {
+        case 'quiz':
+            icon = (
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+            );
+            bgColor = 'bg-blue-600';
+            break;
+        case 'flashcards':
+            icon = (
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h10v2zm-4 4H9v-2h6v2zm4-8H9V5h10v2z"/>
+                </svg>
+            );
+            bgColor = 'bg-green-600';
+            break;
+        case 'interactive':
+        case 'interactif':
+        default:
+            icon = (
+                <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M15 7.5V2H9v5.5l3 3 3-3zM7.5 9H2v6h5.5l3-3-3-3zM9 16.5V22h6v-5.5l-3-3-3 3zM16.5 9l-3 3 3 3H22V9h-5.5z"/>
+                </svg>
+            );
+            bgColor = 'bg-purple-600';
+    }
+
+    return (
+        <div className={`w-full h-full ${bgColor} flex items-center justify-center`}>
+            {icon}
+        </div>
+    );
+};
 
 // Composant pour la grille des exemples
 const ExamplesGrid: React.FC = () => {
@@ -535,7 +567,7 @@ const ExamplesGrid: React.FC = () => {
                     Exemples de créations
                 </h2>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide">
                     {[
                         { id: 'all', label: 'Tous' },
                         { id: 'quiz', label: 'Quiz' },
@@ -558,7 +590,6 @@ const ExamplesGrid: React.FC = () => {
             {filteredExamples.length > 0 ? (
                 <motion.div
                     variants={container}
-                    // initial="hidden"
                     animate={controls}
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
@@ -572,12 +603,16 @@ const ExamplesGrid: React.FC = () => {
                                 variants={item}
                                 className="bg-gray-900 rounded-xl overflow-hidden h-full cursor-pointer group"
                             >
-                                <div className="relative">
-                                    <img
-                                        src={example.thumbnail || 'https://via.placeholder.com/400x225?text=Contenu+Éducatif'}
-                                        alt={example.title}
-                                        className="w-full h-48 object-cover transform transition-transform duration-500 group-hover:scale-105"
-                                    />
+                                <div className="relative h-48">
+                                    {example.thumbnail ? (
+                                        <img
+                                            src={example.thumbnail}
+                                            alt={example.title}
+                                            className="w-full h-48 object-cover transform transition-transform duration-500 group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <DefaultThumbnail type={example.gameType || 'interactive'} />
+                                    )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
                                         <div className="p-3 w-full">
                                             <div className="flex items-center justify-between text-white text-sm">
@@ -592,7 +627,7 @@ const ExamplesGrid: React.FC = () => {
                                     </div>
                                     <div className="absolute top-3 right-3 bg-youtube-red rounded-full p-2 transform rotate-0 hover:rotate-90 transition-transform duration-300">
                                         <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                         </svg>
                                     </div>
                                 </div>
@@ -666,7 +701,6 @@ const StatsCounter: React.FC = () => {
         satisfaction: 98,
     };
 
-    const ref = useRef(null);
     const inViewRef = useRef<HTMLDivElement>(null);
     const [isInView, setIsInView] = useState(false);
 
@@ -716,7 +750,7 @@ const StatsCounter: React.FC = () => {
     }, [isInView]);
 
     return (
-        <div ref={inViewRef} className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-16">
+        <div ref={inViewRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 mt-16">
             {[
                 {
                     label: 'Contenus créés',
@@ -751,7 +785,7 @@ const StatsCounter: React.FC = () => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={isInView ? { opacity: 1, y: 0 } : {}}
                     transition={{ delay: index * 0.2, duration: 0.5 }}
-                    className="bg-gray-900 rounded-2xl p-6 text-center relative overflow-hidden group"
+                    className="bg-gray-900 rounded-2xl p-6 text-center relative overflow-hidden group backdrop-blur-sm bg-opacity-80"
                 >
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-youtube-red to-red-500 origin-left transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
                     <div className="bg-gray-800 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center group-hover:bg-youtube-red/10 transition-colors">
@@ -823,14 +857,14 @@ const HowItWorksSection: React.FC = () => {
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.2, duration: 0.8 }}
                             viewport={{ once: true }}
-                            className="bg-gray-900 rounded-xl p-8 relative"
+                            className="bg-gray-900 rounded-xl p-8 relative backdrop-blur-sm bg-opacity-80"
                         >
                             <div className="absolute -top-3 -right-3 w-8 h-8 bg-youtube-red rounded-full flex items-center justify-center font-bold text-white">
                                 {index + 1}
                             </div>
                             <motion.div
                                 whileHover={{ scale: 1.1, rotate: 5 }}
-                                transition={{ type: "spring", stiffness: 300 }}
+                                transition={{ type: "tween" }}
                                 className="bg-gray-800 w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center"
                             >
                                 {step.icon}
@@ -845,10 +879,87 @@ const HowItWorksSection: React.FC = () => {
     );
 };
 
+// Mobile Hero Section spécifique
+const MobileHero: React.FC<{
+    youtubeUrl: string,
+    isValidUrl: boolean,
+    handleYouTubeSubmit: () => void,
+    setYoutubeUrl: (url: string) => void,
+    navigateToCreation: () => void,
+}> = ({
+          youtubeUrl,
+          isValidUrl,
+          handleYouTubeSubmit,
+          setYoutubeUrl,
+          navigateToCreation
+      }) => {
+    return (
+        <section className="min-h-screen flex flex-col items-center  relative px-6 py-8">
+            {/* Animation de particules fluides */}
+            <FluidEffect />
+
+            {/* Contenu principal */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                className="z-10 w-full max-w-sm"
+            >
+                {/* Logo ou marque */}
+                <motion.div
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex justify-center mb-5"
+                >
+                    <div className="w-16 h-16  flex items-center justify-center">
+                        <img src={"logo-fox-light.png"}/>
+                    </div>
+                </motion.div>
+
+                {/* Titre principal */}
+                <HeroTitle isMobile={true} />
+
+                {/* Description */}
+                <motion.p
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-center text-gray-300 mt-8"
+                >
+                    Transformez n'importe quelle vidéo ou document en expérience d'apprentissage interactive
+                </motion.p>
+
+                {/* Boutons d'action */}
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="flex flex-col items-center mt-12"
+                >
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+                        className="bg-youtube-red text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </motion.button>
+                    <span className="text-gray-400 text-sm mt-3">Commencer</span>
+                </motion.div>
+            </motion.div>
+
+            <FoxLogo />
+        </section>
+    );
+};
+
 // Component principal HomePage
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { refreshCreationHistory } = useAppContext();
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     // États pour le contenu source
     const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -859,6 +970,15 @@ const HomePage: React.FC = () => {
     // Hooks pour YouTube et PDF
     const { validateYouTubeUrl } = useYouTube();
     const { loadPDF } = usePDF();
+
+    // Détecter si l'appareil est mobile
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Valider l'URL YouTube lorsqu'elle change
     useEffect(() => {
@@ -891,159 +1011,279 @@ const HomePage: React.FC = () => {
         }
     };
 
-    // Gérer l'upload de PDF
-    const handlePDFUpload = async (file: File) => {
-        setPdfFile(file);
-
-        try {
-            // Vérifier si le fichier est valide avec usePDF
-            const success = await loadPDF(file);
-
-            if (success) {
-                // Comme on ne peut pas passer un objet File directement via state,
-                // on le stocke temporairement dans le localStorage
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    if (event.target && event.target.result) {
-                        // Stocker temporairement les métadonnées dans le sessionStorage
-                        sessionStorage.setItem('pdf-upload-name', file.name);
-                        sessionStorage.setItem('pdf-upload-size', String(file.size));
-                        sessionStorage.setItem('pdf-upload-type', file.type);
-                        sessionStorage.setItem('pdf-upload-data', event.target.result as string);
-
-                        // Rediriger vers la page de création
-                        navigate(APP_CONFIG.routes.creation, {
-                            state: {
-                                sourceType: 'pdf',
-                                pdfFileName: file.name
-                            }
-                        });
-                    }
-                };
-                reader.readAsDataURL(file);
+    // Naviguer vers la page de création PDF
+    const navigateToCreationPDF = () => {
+        navigate(APP_CONFIG.routes.creation, {
+            state: {
+                sourceType: 'pdf'
             }
-        } catch (error) {
-            console.error("Erreur lors du traitement du PDF:", error);
-        }
+        });
     };
 
     return (
         <div className="min-h-screen bg-dark-bg text-white overflow-x-hidden">
-            {/* Blobs animés en arrière-plan */}
-            <AnimatedBlobs />
+            {/* Blobs animés en arrière-plan (desktop) */}
+            {/*<AnimatedBlobs />*/}
+            {/* Animation de particules fluides */}
+            <FluidEffect />
 
-            {/* Hero Section avec animation avancée */}
-            <section className="relative pt-8 md:pt-24 pb-20 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-5xl mx-auto relative z-10">
-                    <HeroTitle />
+            {/* Hero Section différent selon la plateforme */}
+            {isMobile ? (
+                <>
+                    {/* Version mobile */}
+                    <MobileHero
+                        youtubeUrl={youtubeUrl}
+                        isValidUrl={isValidUrl}
+                        handleYouTubeSubmit={handleYouTubeSubmit}
+                        setYoutubeUrl={setYoutubeUrl}
+                        navigateToCreation={navigateToCreationPDF}
+                    />
 
-                    <motion.p
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
-                        className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto"
-                    >
-                        Intelligence artificielle de pointe au service de l'éducation.
-                    </motion.p>
+                    {/* Section d'action mobile (après le scroll) */}
+                    <section className="py-12 px-4 bg-dark-bg relative" id="action-section">
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                            className="max-w-lg mx-auto"
+                        >
+                            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+                                Commencer avec
+                            </h2>
 
-                    <div className="max-w-2xl mx-auto">
-                        {/* Tabs pour choisir entre YouTube et PDF */}
-                        <div className="flex bg-gray-900 p-1 rounded-lg mb-6">
-                            <button
-                                onClick={() => setActiveTab('youtube')}
-                                className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
-                                    activeTab === 'youtube'
-                                        ? 'bg-youtube-red text-white font-medium'
-                                        : 'text-gray-400 hover:text-gray-200'
-                                }`}
-                            >
-                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-                                </svg>
-                                Vidéo YouTube
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('pdf')}
-                                className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
-                                    activeTab === 'pdf'
-                                        ? 'bg-youtube-red text-white font-medium'
-                                        : 'text-gray-400 hover:text-gray-200'
-                                }`}
-                            >
-                                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 8V3.5L18.5 8H14zm2 11v-1h-5v1h5zm0-4v-1h-5v1h5zm0-4h-2v1h2v-1zm-8 8v-1H6v1h2zm0-4v-1H6v1h2zm0-4v-1H6v1h2z" />
-                                </svg>
-                                Document PDF
-                            </button>
+                            <div className="flex bg-gray-900 p-1 rounded-lg mb-6">
+                                <button
+                                    onClick={() => setActiveTab('youtube')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
+                                        activeTab === 'youtube'
+                                            ? 'bg-youtube-red text-white font-medium'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                                    </svg>
+                                    Vidéo YouTube
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('pdf')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
+                                        activeTab === 'pdf'
+                                            ? 'bg-youtube-red text-white font-medium'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 8V3.5L18.5 8H14zm2 11v-1h-5v1h5zm0-4v-1h-5v1h5zm0-4h-2v1h2v-1zm-8 8v-1H6v1h2zm0-4v-1H6v1h2zm0-4v-1H6v1h2z" />
+                                    </svg>
+                                    Document PDF
+                                </button>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {activeTab === 'youtube' ? (
+                                    <motion.div
+                                        key="youtube"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <AnimatedSearchField
+                                            value={youtubeUrl}
+                                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                                            onSubmit={handleYouTubeSubmit}
+                                            isValid={isValidUrl}
+                                        />
+                                        {youtubeUrl && !isValidUrl && (
+                                            <motion.p
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="mt-2 text-red-500 text-sm"
+                                            >
+                                                URL YouTube invalide. Veuillez entrer une URL valide.
+                                            </motion.p>
+                                        )}
+                                        <div className="mt-6 text-center">
+                                            <AnimatedButton
+                                                onClick={handleYouTubeSubmit}
+                                                disabled={!isValidUrl}
+                                            >
+                                                <span className="flex items-center">
+                                                    <span>Créer avec YouTube</span>
+                                                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                    </svg>
+                                                </span>
+                                            </AnimatedButton>
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="pdf"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="flex flex-col items-center"
+                                    >
+                                        <p className="text-gray-300 mb-6 text-center">
+                                            Pour créer avec un PDF, vous serez redirigé vers notre outil de création spécialisé.
+                                        </p>
+                                        <AnimatedButton
+                                            onClick={navigateToCreationPDF}
+                                        >
+                                            <span className="flex items-center">
+                                                <span>Créer avec PDF</span>
+                                                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                </svg>
+                                            </span>
+                                        </AnimatedButton>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
+                    </section>
+                </>
+            ) : (
+                /* Version desktop */
+                <section className="relative pt-16 md:pt-16 pb-20 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-5xl mx-auto relative z-10">
+                        <HeroTitle isMobile={false} />
+
+                        <motion.p
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6, duration: 0.8 }}
+                            className="text-xl text-gray-300 mb-10 max-w-3xl mx-auto"
+                        >
+                            Intelligence artificielle de pointe au service de l'éducation.
+                        </motion.p>
+
+                        <div className="max-w-2xl mx-auto">
+                            {/* Tabs pour choisir entre YouTube et PDF */}
+                            <div className="flex bg-gray-900 p-1 rounded-lg mb-6">
+                                <button
+                                    onClick={() => setActiveTab('youtube')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
+                                        activeTab === 'youtube'
+                                            ? 'bg-youtube-red text-white font-medium'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+                                    </svg>
+                                    Vidéo YouTube
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('pdf')}
+                                    className={`flex-1 py-2 px-4 rounded-md transition-all duration-300 flex items-center justify-center ${
+                                        activeTab === 'pdf'
+                                            ? 'bg-youtube-red text-white font-medium'
+                                            : 'text-gray-400 hover:text-gray-200'
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 8V3.5L18.5 8H14zm2 11v-1h-5v1h5zm0-4v-1h-5v1h5zm0-4h-2v1h2v-1zm-8 8v-1H6v1h2zm0-4v-1H6v1h2zm0-4v-1H6v1h2z" />
+                                    </svg>
+                                    Document PDF
+                                </button>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {activeTab === 'youtube' ? (
+                                    <motion.div
+                                        key="youtube"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <AnimatedSearchField
+                                            value={youtubeUrl}
+                                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                                            onSubmit={handleYouTubeSubmit}
+                                            isValid={isValidUrl}
+                                        />
+                                        {youtubeUrl && !isValidUrl && (
+                                            <motion.p
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="mt-2 text-red-500 text-sm"
+                                            >
+                                                URL YouTube invalide. Veuillez entrer une URL valide.
+                                            </motion.p>
+                                        )}
+                                        <div className="mt-8 text-center">
+                                            <AnimatedButton
+                                                onClick={handleYouTubeSubmit}
+                                                disabled={!isValidUrl}
+                                            >
+                                                <span className="flex items-center">
+                                                    <span>Créer avec YouTube</span>
+                                                    <motion.svg
+                                                        className="w-5 h-5 ml-2"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        initial={{ x: 0 }}
+                                                        animate={{ x: [0, 5, 0] }}
+                                                        transition={{
+                                                            repeat: Infinity,
+                                                            duration: 1,
+                                                            repeatDelay: 1,
+                                                            type: "tween"
+                                                        }}
+                                                    >
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                    </motion.svg>
+                                                </span>
+                                            </AnimatedButton>
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    <motion.div
+                                        key="pdf"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="flex flex-col items-center"
+                                    >
+                                        <p className="text-gray-300 mb-6 text-center">
+                                            Pour créer avec un PDF, vous serez redirigé vers notre outil de création spécialisé.
+                                        </p>
+                                        <AnimatedButton
+                                            onClick={navigateToCreationPDF}
+                                        >
+                                            <span className="flex items-center">
+                                                <span>Créer avec PDF</span>
+                                                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                                </svg>
+                                            </span>
+                                        </AnimatedButton>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
 
-                        <AnimatePresence mode="wait">
-                            {activeTab === 'youtube' ? (
-                                <motion.div
-                                    key="youtube"
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <AnimatedSearchField
-                                        value={youtubeUrl}
-                                        onChange={(e) => setYoutubeUrl(e.target.value)}
-                                        onSubmit={handleYouTubeSubmit}
-                                        isValid={isValidUrl}
-                                    />
-                                    {youtubeUrl && !isValidUrl && (
-                                        <motion.p
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="mt-2 text-red-500 text-sm"
-                                        >
-                                            URL YouTube invalide. Veuillez entrer une URL valide.
-                                        </motion.p>
-                                    )}
-                                    <div className="mt-8 text-center">
-                                        <AnimatedButton
-                                            onClick={handleYouTubeSubmit}
-                                            disabled={!isValidUrl}
-                                        >
-                      <span className="flex items-center">
-                        <span>Créer avec YouTube</span>
-                        <motion.svg
-                            className="w-5 h-5 ml-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            initial={{ x: 0 }}
-                            animate={{ x: [0, 5, 0] }}
-                            transition={{ repeat: Infinity, duration: 1, repeatDelay: 1 }}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </motion.svg>
-                      </span>
-                                        </AnimatedButton>
-                                    </div>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="pdf"
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    <AnimatedPDFUploader onFileSelect={handlePDFUpload} />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                        <StatsCounter />
 
-                    <StatsCounter />
-                </div>
-            </section>
+                        <div className="mt-12 text-center">
+                            <FoxLogo />
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Section Exemples de créations */}
-            <section className="py-16 px-4 md:px-8 bg-dark-bg bg-opacity-50">
+            <section className="py-16 px-4 md:px-8 bg-dark-bg/50 backdrop-blur-sm">
                 <div className="max-w-6xl mx-auto">
+                    <AnimatedBlobs/>
                     <ExamplesGrid />
                 </div>
             </section>
@@ -1052,7 +1292,6 @@ const HomePage: React.FC = () => {
             <HowItWorksSection />
 
             <InstallPWA />
-
 
             {/* Section CTA finale */}
             <section className="py-24 px-4 md:px-8 relative overflow-hidden">
@@ -1096,8 +1335,6 @@ const HomePage: React.FC = () => {
                     </svg>
                 </motion.button>
             </motion.div>
-
-
         </div>
     );
 };
