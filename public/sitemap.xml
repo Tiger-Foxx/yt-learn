@@ -90,27 +90,27 @@
     </url>
 
     <url>
-        <loc>https://yt-learn.the-fox.tech/examples/flashcards</loc>
+        <loc>https://yt-learn.the-fox.tech/playspace</loc>
         <lastmod>2025-05-10</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
         <image:image>
-            <image:loc>https://yt-learn.the-fox.tech/screenshots/flashcards-example.png</image:loc>
+            <image:loc>https://yt-learn.the-fox.tech/</image:loc>
             <image:title>Exemple de flashcards YT-Learn</image:title>
         </image:image>
     </url>
 
     <url>
-        <loc>https://yt-learn.the-fox.tech/examples/games</loc>
+        <loc>https://yt-learn.the-fox.tech/playspace</loc>
         <lastmod>2025-05-10</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
         <image:image>
-            <image:loc>https://yt-learn.the-fox.tech/screenshots/interactive-game-example.png</image:loc>
+            <image:loc>https://yt-learn.the-fox.tech/</image:loc>
             <image:title>Exemple de jeu interactif YT-Learn</image:title>
         </image:image>
         <video:video>
-            <video:thumbnail_loc>https://yt-learn.the-fox.tech/videos/game-demo-thumb.jpg</video:thumbnail_loc>
+            <video:thumbnail_loc>https://yt-learn.the-fox.tech/</video:thumbnail_loc>
             <video:title>Démonstration de jeu interactif YT-Learn</video:title>
             <video:description>Découvrez comment YT-Learn crée des jeux éducatifs personnalisés à partir du contenu YouTube</video:description>
             <video:content_loc>https://yt-learn.the-fox.tech/videos/game-demo.mp4</video:content_loc>
@@ -120,21 +120,21 @@
 
     <!-- Articles de blog -->
     <url>
-        <loc>https://yt-learn.the-fox.tech/blog/apprendre-avec-youtube</loc>
+        <loc>https://yt-learn.the-fox.tech/</loc>
         <lastmod>2025-05-10</lastmod>
         <changefreq>never</changefreq>
         <priority>0.6</priority>
     </url>
 
     <url>
-        <loc>https://yt-learn.the-fox.tech/blog/comment-creer-quiz</loc>
+        <loc>https://yt-learn.the-fox.tech/</loc>
         <lastmod>2025-05-05</lastmod>
         <changefreq>never</changefreq>
         <priority>0.6</priority>
     </url>
 
     <url>
-        <loc>https://yt-learn.the-fox.tech/blog/pedagogie-interactive</loc>
+        <loc>https://yt-learn.the-fox.tech/</loc>
         <lastmod>2025-04-28</lastmod>
         <changefreq>never</changefreq>
         <priority>0.6</priority>
@@ -150,7 +150,7 @@
 
     <!-- Page d'utilisation pour les étudiants -->
     <url>
-        <loc>https://yt-learn.the-fox.tech/use-cases/students</loc>
+        <loc>https://yt-learn.the-fox.tech/</loc>
         <lastmod>2025-05-10</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
