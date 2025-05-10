@@ -1,0 +1,54 @@
+# robots.txt pour YT-Learn - https://yt-learn.the-fox.tech
+# Créé le: 2025-05-10
+# Développeur: Pascal Arthur Donfack (the-fox.tech)
+
+# Directives globales pour tous les robots
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /faq
+Allow: /privacy
+Allow: /contact
+Allow: /public/
+Allow: /sitemap.xml
+
+# Protéger les pages nécessitant une authentification ou non destinées à l'indexation
+Disallow: /playspace/*    # Pages de jeux générés spécifiques à l'utilisateur
+Disallow: /game/*         # Sessions de jeu individuelles
+
+# Optimisation pour les ressources
+Disallow: /*.js$          # Fichiers JavaScript
+Disallow: /*.css$         # Feuilles de style
+Disallow: /*.json$        # Fichiers de données JSON
+
+# Directives spécifiques pour les robots particuliers
+
+# GoogleBot - Robot principal de Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+# GoogleBot Images - Pour l'indexation des images
+User-agent: Googlebot-Image
+Allow: /public/images/
+Allow: /screenshots/
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Bingbot - Robot de Microsoft Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+# Robots d'analyse de contenu
+User-agent: AdsBot-Google
+Allow: /
+
+# Liens vers les ressources importantes
+Sitemap: https://yt-learn.the-fox.tech/sitemap.xml
+Sitemap: https://yt-learn.the-fox.tech/images-sitemap.xml
+Sitemap: https://yt-learn-eight.vercel.app/images-sitemap.xml
+Sitemap: https://yt-learn-eight.vercel.app/sitemap.xml
