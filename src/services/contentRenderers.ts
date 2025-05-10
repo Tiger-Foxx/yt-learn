@@ -708,7 +708,7 @@ class ContentRenderers {
                     // Only auto-advance if user hasn't manually moved away
                     showQuestion(questionIndex + 1);
                   }
-                }, 2500);
+                }, 15000);
               }
             }
             

@@ -14,9 +14,121 @@ import {
     SPEC_ADDENDUM
 } from '@/utils/prompts';
 
-// Modèle et configuration de l'API
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI({ apiKey: API_KEY });
+// Configuration pour la gestion des clés API
+interface ApiKeyConfig {
+    key: string;
+    name: string;
+    lastUsed: number;
+    quotaExceeded: boolean;
+    resetTime?: number; // Timestamp quand la clé sera réinitialisée
+}
+
+// Classe pour gérer les clés API
+class ApiKeyManager {
+    private apiKeys: ApiKeyConfig[] = [];
+    private currentKeyIndex: number = 0;
+    private readonly RESET_TIME_MS: number = 24 * 60 * 60 * 1000; // 24 heures en millisecondes
+
+    constructor() {
+        this.initializeKeys();
+    }
+
+    private initializeKeys() {
+        // Initialiser toutes les clés disponibles depuis les variables d'environnement
+        const keyVariables = [
+            { env: import.meta.env.VITE_GEMINI_API_KEY, name: 'PRIMARY' },
+            { env: import.meta.env.VITE_GEMINI_API_KEY_2, name: 'SECONDARY_1' },
+            { env: import.meta.env.VITE_GEMINI_API_KEY_3, name: 'SECONDARY_2' },
+            { env: import.meta.env.VITE_GEMINI_API_KEY_4, name: 'SECONDARY_3' }
+        ];
+
+        this.apiKeys = keyVariables
+            .filter(k => k.env && k.env.trim() !== '')
+            .map(k => ({
+                key: k.env,
+                name: k.name,
+                lastUsed: 0,
+                quotaExceeded: false
+            }));
+
+        if (this.apiKeys.length === 0) {
+            console.error("ERREUR CRITIQUE: Aucune clé API Gemini valide n'a été trouvée.");
+        }
+    }
+
+    public getCurrentKey(): string {
+        this.checkKeyResets();
+
+        // Si toutes les clés ont atteint leur quota
+        if (this.allKeysExhausted()) {
+            throw new Error("Toutes les clés API ont atteint leur quota. Veuillez réessayer plus tard.");
+        }
+
+        // Si la clé actuelle a atteint son quota, passer à la suivante
+        while (this.apiKeys[this.currentKeyIndex].quotaExceeded) {
+            this.rotateToNextKey();
+        }
+
+        // Mettre à jour le timestamp de dernière utilisation
+        this.apiKeys[this.currentKeyIndex].lastUsed = Date.now();
+
+        return this.apiKeys[this.currentKeyIndex].key;
+    }
+
+    public markCurrentKeyAsExhausted() {
+        if (this.apiKeys.length === 0) return;
+
+        // Marquer la clé actuelle comme ayant atteint son quota
+        this.apiKeys[this.currentKeyIndex].quotaExceeded = true;
+        this.apiKeys[this.currentKeyIndex].resetTime = Date.now() + this.RESET_TIME_MS;
+
+        console.warn(`Clé API ${this.apiKeys[this.currentKeyIndex].name} a atteint son quota et sera mise en pause jusqu'à ${new Date(this.apiKeys[this.currentKeyIndex].resetTime || 0).toLocaleString()}`);
+
+        // Passer à la clé suivante
+        this.rotateToNextKey();
+    }
+
+    private rotateToNextKey() {
+        if (this.apiKeys.length <= 1) return;
+
+        this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+    }
+
+    private checkKeyResets() {
+        const now = Date.now();
+        this.apiKeys.forEach(key => {
+            if (key.quotaExceeded && key.resetTime && now >= key.resetTime) {
+                key.quotaExceeded = false;
+                key.resetTime = undefined;
+                console.info(`Clé API ${key.name} a été réinitialisée et est maintenant disponible`);
+            }
+        });
+    }
+
+    private allKeysExhausted(): boolean {
+        return this.apiKeys.every(key => key.quotaExceeded);
+    }
+
+    public getCurrentKeyInfo(): string {
+        if (this.apiKeys.length === 0) return "Aucune clé API disponible";
+        return `Utilisation de la clé ${this.apiKeys[this.currentKeyIndex].name}`;
+    }
+
+    public getKeysStatus(): string {
+        return this.apiKeys.map(key =>
+            `${key.name}: ${key.quotaExceeded ? 'Quota dépassé' : 'Disponible'}`
+        ).join(', ');
+    }
+}
+
+// Instancier le gestionnaire de clés API
+const apiKeyManager = new ApiKeyManager();
+
+// Fonction pour obtenir une instance de l'API Gemini avec la clé courante
+function getGeminiInstance() {
+    const currentKey = apiKeyManager.getCurrentKey();
+    return new GoogleGenerativeAI({ apiKey: currentKey });
+}
 
 /**
  * Options pour les requêtes Gemini
@@ -71,74 +183,142 @@ export interface Flashcards {
 }
 
 /**
+ * Vérifie si l'erreur est liée à un dépassement de quota
+ */
+function isQuotaExceededError(error: any): boolean {
+    if (!error) return false;
+
+    // Vérifier les différentes formes possibles de l'erreur de quota
+    const errorString = error.toString().toLowerCase();
+    const errorMessage = error.message?.toLowerCase() || '';
+    const responseBody = error.response?.body || error.responseBody || '';
+
+    // Cas 1: Code d'erreur HTTP 429
+    if (error.status === 429 || error.code === 429) {
+        return true;
+    }
+
+    // Cas 2: Message contenant des mots clés liés aux quotas
+    if (errorString.includes('quota') ||
+        errorString.includes('limit') ||
+        errorMessage.includes('quota') ||
+        errorMessage.includes('limit') ||
+        errorString.includes('resource_exhausted') ||
+        errorString.includes('resource has been exhausted')) {
+        return true;
+    }
+
+    // Cas 3: Analyse du corps de réponse pour les formats JSON
+    if (typeof responseBody === 'string') {
+        try {
+            const parsedBody = JSON.parse(responseBody);
+            if (parsedBody.error?.code === 429 ||
+                parsedBody.error?.status === 'RESOURCE_EXHAUSTED' ||
+                parsedBody.error?.message?.toLowerCase().includes('quota')) {
+                return true;
+            }
+        } catch (e) {
+            // Si ce n'est pas du JSON valide, on peut analyser en tant que chaîne
+            if (responseBody.toLowerCase().includes('quota') ||
+                responseBody.toLowerCase().includes('resource_exhausted')) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
  * Fonction de base pour générer du texte avec Gemini
+ * avec gestion automatique des rotations de clés API en cas d'erreur de quota
  */
 async function generateText(options: GenerateTextOptions): Promise<string> {
-    try {
-        const {
-            prompt,
-            modelName = APP_CONFIG.api.gemini.models.default,
-            temperature = APP_CONFIG.api.gemini.defaultTemperature,
-            maxOutputTokens = APP_CONFIG.api.gemini.maxOutputTokens,
-            videoUrl,
-            pdfContent
-        } = options;
+    const MAX_RETRIES = apiKeyManager.getKeysStatus().split(',').length; // Nombre de clés disponibles
+    let attempts = 0;
 
-        // const model = genAI.getGenerativeModel({
-        //     model: modelName,
-        //     generationConfig: {
-        //         temperature,
-        //         maxOutputTokens,
-        //     },
-        // });
+    while (attempts < MAX_RETRIES) {
+        attempts++;
 
-        let result;
+        try {
+            const {
+                prompt,
+                modelName = APP_CONFIG.api.gemini.models.default,
+                temperature = APP_CONFIG.api.gemini.defaultTemperature,
+                maxOutputTokens = APP_CONFIG.api.gemini.maxOutputTokens,
+                videoUrl,
+                pdfContent
+            } = options;
 
-        if (videoUrl) {
-            // Requête avec URL YouTube
-            result = await genAI.models.generateContent({
-                model: APP_CONFIG.api.gemini.models.videoProcessing,
-                contents: [
-                    prompt,
-                    {
-                        fileData: {
-                            mimeType: 'video/mp4',
-                            fileUri: videoUrl,
+            // Obtenir une instance de l'API avec la clé actuelle
+            const genAI = getGeminiInstance();
+
+            let result;
+
+            if (videoUrl) {
+                // Requête avec URL YouTube
+                result = await genAI.models.generateContent({
+                    model: APP_CONFIG.api.gemini.models.videoProcessing,
+                    contents: [
+                        prompt,
+                        {
+                            fileData: {
+                                mimeType: 'video/mp4',
+                                fileUri: videoUrl,
+                            },
                         },
+                    ],
+                });
+            } else if (pdfContent) {
+                // Requête avec fichier PDF
+                const fileAsGenerativePart: {
+                    inlineData: {
+                        data: string;
+                        mimeType: string;
+                    };
+                } = {
+                    inlineData: {
+                        data: await blobToBase64(pdfContent),
+                        mimeType: "application/pdf",
                     },
-                ],
-            });
-        } else if (pdfContent) {
-            // Requête avec fichier PDF
-            const fileAsGenerativePart: {
-                inlineData: {
-                    data: string;
-                    mimeType: string;
                 };
-            } = {
-                inlineData: {
-                    data: await blobToBase64(pdfContent),
-                    mimeType: "application/pdf",
-                },
-            };
-            result = await genAI.models.generateContent({
-                model: APP_CONFIG.api.gemini.models.pdfProcessing,
-                contents: [prompt, fileAsGenerativePart],
-            });
-        } else {
-            // Requête texte simple
-            result =await genAI.models.generateContent({
-                model: modelName,
-                contents: prompt,
-            });
-        }
+                result = await genAI.models.generateContent({
+                    model: APP_CONFIG.api.gemini.models.pdfProcessing,
+                    contents: [prompt, fileAsGenerativePart],
+                });
+            } else {
+                // Requête texte simple
+                result = await genAI.models.generateContent({
+                    model: modelName,
+                    contents: prompt,
+                });
+            }
 
-        // const response = await result.response;
-        return result.text || 'NO RESPONSE';
-    } catch (error) {
-        console.error("Erreur lors de la génération de contenu avec Gemini:", error);
-        throw new Error(`Erreur Gemini: ${error instanceof Error ? error.message : String(error)}`);
+            // Si la requête réussit, retourner le résultat
+            return result.text || 'NO RESPONSE';
+
+        } catch (error) {
+            console.error(`Tentative ${attempts}/${MAX_RETRIES} a échoué:`, error);
+
+            if (isQuotaExceededError(error)) {
+                console.warn("Quota dépassé, changement de clé API...");
+                apiKeyManager.markCurrentKeyAsExhausted();
+
+                // Si ce n'est pas notre dernière tentative, on réessaie avec une nouvelle clé
+                if (attempts < MAX_RETRIES) {
+                    console.info(apiKeyManager.getCurrentKeyInfo());
+                    continue;
+                }
+            }
+
+            // Si l'erreur n'est pas liée au quota ou si c'était notre dernière tentative,
+            // on propage l'erreur
+            throw new Error(`Erreur Gemini: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
+
+    // Si on arrive ici, c'est que toutes les clés ont échoué
+    throw new Error("Échec de génération après avoir essayé toutes les clés API disponibles.");
 }
 
 /**
@@ -171,8 +351,10 @@ async function generateSpecFromVideo(videoUrl: string, additionalInstructions?: 
         if (additionalInstructions) {
             fullPrompt += `\n\nAdditional instructions: ${additionalInstructions}`;
         }
-        console.log("************** GENERATION DE SPEC DE JEUX PAR VIDEO *****************")
-        console.log("************** PROMPT *****************",fullPrompt , videoUrl)
+        console.log("************** GENERATION DE SPEC DE JEUX PAR VIDEO *****************");
+        console.log("************** PROMPT *****************", fullPrompt);
+        console.log("************** URL VIDEO *****************", videoUrl);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
 
         const specResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.videoProcessing,
@@ -180,15 +362,15 @@ async function generateSpecFromVideo(videoUrl: string, additionalInstructions?: 
             videoUrl: videoUrl,
         });
 
-        console.log("************** SPEC RESPONSE BRUTE *****************",specResponse )
+        console.log("************** SPEC RESPONSE BRUTE *****************", specResponse);
 
         // Traiter la réponse pour extraire la spec JSON
         const parsedResponse = parseJSON(specResponse);
-        const spec =  parsedResponse.spec || specResponse;
-        console.log("************** SPEC JUSTE POST PARSING *****************",spec )
+        const spec = parsedResponse.spec || specResponse;
+        console.log("************** SPEC JUSTE POST PARSING *****************", spec);
         spec.addendum = SPEC_ADDENDUM;
 
-        console.log("************** SPEC RESPONSE TRAITE *****************",spec )
+        console.log("************** SPEC RESPONSE TRAITE *****************", spec);
 
         return spec as GameSpec;
     } catch (error) {
@@ -207,8 +389,9 @@ async function generateSpecFromPDF(pdfContent: Blob, additionalInstructions?: st
         if (additionalInstructions) {
             fullPrompt += `\n\nAdditional instructions (from user): ${additionalInstructions}`;
         }
-        console.log("************** GENERATION DE SPEC DE JEUX PAR pdf *****************")
-        console.log("************** PROMPT *****************",fullPrompt )
+        console.log("************** GENERATION DE SPEC DE JEUX PAR PDF *****************");
+        console.log("************** PROMPT *****************", fullPrompt);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
 
         const specResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.pdfProcessing,
@@ -219,7 +402,7 @@ async function generateSpecFromPDF(pdfContent: Blob, additionalInstructions?: st
         // Traiter la réponse pour extraire la spec JSON
         const parsedResponse = parseJSON(specResponse);
         const spec = parsedResponse.spec || specResponse;
-        spec.addendum= SPEC_ADDENDUM;
+        spec.addendum = SPEC_ADDENDUM;
 
         return spec as GameSpec;
     } catch (error) {
@@ -234,9 +417,10 @@ async function generateSpecFromPDF(pdfContent: Blob, additionalInstructions?: st
 async function generateCodeFromSpec(spec: string, difficulty: string = APP_CONFIG.gameOptions.defaultDifficulty): Promise<string> {
     try {
         const prompt = `${CODE_FROM_SPEC_PROMPT}\n\nDifficulté: ${difficulty}\n\nSpécifications:\n${spec}`;
-        console.log("************** GENERATION DE CODE PAR SPEC *****************")
-        console.log("************** PROMPT *****************",prompt , spec )
-        console.log("********** SPEC *****************",spec )
+        console.log("************** GENERATION DE CODE PAR SPEC *****************");
+        console.log("************** PROMPT *****************", prompt);
+        console.log("************** SPEC *****************", spec);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
 
         const codeResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.codeGeneration,
@@ -265,9 +449,12 @@ async function generateQuizFromVideo(
     questionCount: number = APP_CONFIG.gameOptions.defaultQuestionCount
 ): Promise<Quiz> {
     try {
-        console.log("************** GENERATION DE QUIZZ PAR VIDEO *****************")
+        console.log("************** GENERATION DE QUIZZ PAR VIDEO *****************");
         const prompt = `${QUIZ_FROM_VIDEO_PROMPT}\n\nDifficulté: ${difficulty} sur une echelle de 1 a 10 \nNombre de questions: ${questionCount}`;
-        console.log("************** PROMPT *****************",prompt , videoUrl )
+        console.log("************** PROMPT *****************", prompt);
+        console.log("************** URL VIDEO *****************", videoUrl);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
+
         const quizResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.quiz,
             prompt: prompt,
@@ -291,11 +478,11 @@ async function generateQuizFromPDF(
     questionCount: number = APP_CONFIG.gameOptions.defaultQuestionCount
 ): Promise<Quiz> {
     try {
-
-
         const prompt = `${QUIZ_FROM_PDF_PROMPT}\n\nDifficulté: ${difficulty}\nNombre de questions: ${questionCount}`;
-        console.log("************** GENERATION DE QUIZZ PAR PDF *****************")
-        console.log("************** PROMPT *****************",prompt , pdfContent.slice(0,20) )
+        console.log("************** GENERATION DE QUIZZ PAR PDF *****************");
+        console.log("************** PROMPT *****************", prompt);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
+
         const quizResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.quiz,
             prompt: prompt,
@@ -319,6 +506,10 @@ async function generateFlashcardsFromVideo(
 ): Promise<Flashcards> {
     try {
         const prompt = `${FLASHCARDS_FROM_VIDEO_PROMPT}\n\nNombre de flashcards: ${count}`;
+        console.log("************** GENERATION DE FLASHCARDS PAR VIDEO *****************");
+        console.log("************** PROMPT *****************", prompt);
+        console.log("************** URL VIDEO *****************", videoUrl);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
 
         const flashcardsResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.flashcards,
@@ -343,6 +534,9 @@ async function generateFlashcardsFromPDF(
 ): Promise<Flashcards> {
     try {
         const prompt = `${FLASHCARDS_FROM_PDF_PROMPT}\n\nNombre de flashcards: ${count}`;
+        console.log("************** GENERATION DE FLASHCARDS PAR PDF *****************");
+        console.log("************** PROMPT *****************", prompt);
+        console.log("************** STATUT CLÉS API *****************", apiKeyManager.getKeysStatus());
 
         const flashcardsResponse = await generateText({
             modelName: APP_CONFIG.api.gemini.models.flashcards,
@@ -375,6 +569,16 @@ function generateThumbnail(gameType: string): string {
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'%3E%3Crect width='300' height='200' fill='${color.replace('#', '%23')}'/%3E%3C/svg%3E`;
 }
 
+/**
+ * Expose l'état des clés API pour monitoring
+ */
+function getApiKeyStatus(): { currentKey: string, allKeys: string } {
+    return {
+        currentKey: apiKeyManager.getCurrentKeyInfo(),
+        allKeys: apiKeyManager.getKeysStatus()
+    };
+}
+
 export default {
     generateSpecFromVideo,
     generateSpecFromPDF,
@@ -383,5 +587,6 @@ export default {
     generateQuizFromPDF,
     generateFlashcardsFromVideo,
     generateFlashcardsFromPDF,
-    generateThumbnail
+    generateThumbnail,
+    getApiKeyStatus
 };
