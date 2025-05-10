@@ -37,6 +37,7 @@ const QuizGame: React.FC<QuizGameProps> = ({
             setIsComplete(true);
             const finalScore = Object.values(answeredQuestions).filter(q => q.isCorrect).length;
             setScore(finalScore);
+            console.log(score)
             onComplete?.(finalScore, totalQuestions);
         }
     }, [answeredCount, totalQuestions, isComplete, answeredQuestions, onComplete]);

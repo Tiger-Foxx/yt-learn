@@ -11,7 +11,7 @@ const YouTubeInput: React.FC<YouTubeInputProps> = ({ onVideoValidated }) => {
     const [url, setUrl] = useState('');
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const { validateYouTubeUrl, isLoading, error } = useYouTube();
+    const { validateYouTubeUrl, isLoading } = useYouTube();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -3,7 +3,7 @@ import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom';
 import APP_CONFIG from '@/config/appConfig';
 import useCreation from "@/hooks/useCreation";
-import html2canvas from 'html2canvas';
+// import html2canvas from 'html2canvas';
 
 const PlaySpacePage: React.FC = () => {
     const navigate = useNavigate();
@@ -81,7 +81,7 @@ const PlaySpacePage: React.FC = () => {
     };
 
     // Function to download HTML content
-    const downloadHtmlContent = async (creation) => {
+    const downloadHtmlContent = async (creation:any) => {
         try {
             setDownloadingId(creation.id);
 
@@ -122,7 +122,7 @@ const PlaySpacePage: React.FC = () => {
     };
 
     // Generate default thumbnail for different game types
-    const getDefaultThumbnail = (gameType, title) => {
+    const getDefaultThumbnail = (gameType:never, title:string) => {
         // Background colors for different game types
         const bgColors = {
             quiz: 'from-blue-600 to-blue-900',
@@ -158,11 +158,11 @@ const PlaySpacePage: React.FC = () => {
         };
 
         // Get initials from title
-        const getInitials = (title) => {
+        const getInitials = (title:string) => {
             return title
                 .split(' ')
                 .slice(0, 2)
-                .map(word => word[0])
+                .map(word  => word[0])
                 .join('')
                 .toUpperCase();
         };
@@ -442,7 +442,7 @@ const PlaySpacePage: React.FC = () => {
                 >
                     {filteredCreations.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-                            {filteredCreations.map((creation, index) => (
+                            {filteredCreations.map((creation) => (
                                 <motion.div
                                     key={creation.id}
                                     variants={itemVariants}

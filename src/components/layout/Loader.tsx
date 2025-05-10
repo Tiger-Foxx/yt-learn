@@ -31,7 +31,7 @@ const Loader: React.FC<LoaderProps> = ({
                                            spotlight = false
                                        }) => {
     const [progressValue, setProgressValue] = useState(progress || 0);
-    const [randomTips, setRandomTips] = useState<string[]>([
+    const [randomTips] = useState<string[]>([
         "Les vidéos éducatives sont plus efficaces avec des quiz interactifs",
         "Testez différents types de jeux pour maximiser l'engagement",
         "Les flashcards sont idéales pour la mémorisation à long terme",
@@ -40,7 +40,7 @@ const Loader: React.FC<LoaderProps> = ({
         "Vous pouvez utiliser YTLearn hors ligne après la génération"
     ]);
     const [currentTip, setCurrentTip] = useState(0);
-    const [particles, setParticles] = useState<{id: number, x: number, y: number, size: number, speed: number}[]>([]);
+    const [particles] = useState<{id: number, x: number, y: number, size: number, speed: number}[]>([]);
 
     // Effet pour l'animation de progression fluide
     useEffect(() => {

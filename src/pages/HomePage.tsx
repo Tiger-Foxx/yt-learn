@@ -5,8 +5,8 @@ import { useAppContext } from '@/context/AppContext';
 import APP_CONFIG from '@/config/appConfig';
 import useYouTube from '@/hooks/useYouTube';
 import usePDF from '@/hooks/usePDF';
-import { exampleCreations } from '@/data/exampleCreations';
-import storageService, { Creation } from '@/services/storageService';
+// import { exampleCreations } from '@/data/exampleCreations';
+import  { Creation } from '@/services/storageService';
 import {InstallPWA} from "@/pages/CreationPage.tsx";
 import Lottie from 'react-lottie';
 import fluidAnimationData from '@/assets/fluid-animation.json';
@@ -141,13 +141,15 @@ const TextGlitch: React.FC<{ text: string; className?: string }> = ({ text, clas
         const triggerGlitch = () => {
             let iterations = 0;
             const interval = setInterval(() => {
-                setDisplayText(prevText => {
+                setDisplayText(() => {
+
                     // Créer un texte avec des caractères aléatoires
                     if (iterations < 10) {
+
                         const randomChar = () => glitchChars[Math.floor(Math.random() * glitchChars.length)];
                         return originalText.current
                             .split('')
-                            .map((char, idx) => {
+                            .map((char) => {
                                 // 10% de chance de remplacer un caractère
                                 if (Math.random() < 0.1) {
                                     return randomChar();
@@ -886,30 +888,24 @@ const MobileHero: React.FC<{
     handleYouTubeSubmit: () => void,
     setYoutubeUrl: (url: string) => void,
     navigateToCreation: () => void,
-}> = ({
-          youtubeUrl,
-          isValidUrl,
-          handleYouTubeSubmit,
-          setYoutubeUrl,
-          navigateToCreation
-      }) => {
+}> = function ({}) {
     return (
         <section className="min-h-screen flex flex-col items-center  relative px-6 py-8">
             {/* Animation de particules fluides */}
-            <FluidEffect />
+            <FluidEffect/>
 
             {/* Contenu principal */}
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1 }}
+                initial={{opacity: 0}}
+                animate={{opacity: 1}}
+                transition={{duration: 1}}
                 className="z-10 w-full max-w-sm"
             >
                 {/* Logo ou marque */}
                 <motion.div
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
+                    initial={{y: -20, opacity: 0}}
+                    animate={{y: 0, opacity: 1}}
+                    transition={{delay: 0.2}}
                     className="flex justify-center mb-5"
                 >
                     <div className="w-16 h-16  flex items-center justify-center">
@@ -918,13 +914,13 @@ const MobileHero: React.FC<{
                 </motion.div>
 
                 {/* Titre principal */}
-                <HeroTitle isMobile={true} />
+                <HeroTitle isMobile={true}/>
 
                 {/* Description */}
                 <motion.p
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.6 }}
+                    initial={{y: 20, opacity: 0}}
+                    animate={{y: 0, opacity: 1}}
+                    transition={{delay: 0.6}}
                     className="text-center text-gray-300 mt-8"
                 >
                     Transformez n'importe quelle vidéo ou document en expérience d'apprentissage interactive
@@ -932,25 +928,25 @@ const MobileHero: React.FC<{
 
                 {/* Boutons d'action */}
                 <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.8 }}
+                    initial={{y: 20, opacity: 0}}
+                    animate={{y: 0, opacity: 1}}
+                    transition={{delay: 0.8}}
                     className="flex flex-col items-center mt-12"
                 >
                     <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+                        whileTap={{scale: 0.95}}
+                        onClick={() => window.scrollTo({top: window.innerHeight, behavior: 'smooth'})}
                         className="bg-youtube-red text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </motion.button>
                     <span className="text-gray-400 text-sm mt-3">Commencer</span>
                 </motion.div>
             </motion.div>
 
-            <FoxLogo />
+            <FoxLogo/>
         </section>
     );
 };
@@ -964,12 +960,12 @@ const HomePage: React.FC = () => {
     // États pour le contenu source
     const [youtubeUrl, setYoutubeUrl] = useState('');
     const [isValidUrl, setIsValidUrl] = useState(false);
-    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    // const [pdfFile, setPdfFile] = useState<File | null>(null);
     const [activeTab, setActiveTab] = useState<'youtube' | 'pdf'>('youtube');
 
     // Hooks pour YouTube et PDF
     const { validateYouTubeUrl } = useYouTube();
-    const { loadPDF } = usePDF();
+    // const { loadPDF } = usePDF();
 
     // Détecter si l'appareil est mobile
     useEffect(() => {

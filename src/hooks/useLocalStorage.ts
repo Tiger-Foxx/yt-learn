@@ -12,17 +12,17 @@ import storageService from '@/services/storageService';
 function useLocalStorage<T>(
     key: string,
     initialValue: T
-): [T, (value: T | ((val: T) => T)) => void, () => void] {
+): [T | null, (value: (((val: (T | null)) => T) | T)) => void, () => void] {
     // Fonction pour obtenir la valeur depuis le service de stockage
-    const readValue = useCallback((): T => {
+    const readValue = useCallback((): T | null => {
         return storageService.getItem<T>(key, initialValue);
     }, [key, initialValue]);
 
     // État pour stocker la valeur actuelle
-    const [storedValue, setStoredValue] = useState<T>(readValue());
+    const [storedValue, setStoredValue] = useState<T|null>(readValue());
 
     // Fonction pour mettre à jour localStorage et l'état
-    const setValue = useCallback((value: T | ((val: T) => T)) => {
+    const setValue = useCallback((value: T | ((val: T|null) => T)) => {
         try {
             // Permettre à la valeur d'être une fonction comme pour setState
             const valueToStore = value instanceof Function ? value(storedValue) : value;

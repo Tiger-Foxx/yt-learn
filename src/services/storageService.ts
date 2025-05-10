@@ -119,7 +119,7 @@ class StorageService {
     if (creations) {
         return creations
             .filter((creation): creation is Creation => creation.id !== undefined && creation.title !== undefined && creation.type !== undefined && creation.gameType !== undefined && creation.content !== undefined)
-            .concat(exampleCreations);
+            .concat(exampleCreations as ConcatArray<Creation>);
     }
 
     return exampleCreations;
@@ -153,7 +153,7 @@ class StorageService {
             }
 
             // Ajouter la nouvelle création
-            history.push(creation);
+            history.push(<Creation>creation);
 
             // Enregistrer l'historique mis à jour
             return this.setItem('creations', history);

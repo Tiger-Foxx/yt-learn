@@ -22,12 +22,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
          containerClassName = '',
          ...props
      }, ref) => {
-        const inputWrapperClasses = `
-      flex items-center bg-white dark:bg-gray-900 border rounded-md overflow-hidden
-      ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500'}
-      ${fullWidth ? 'w-full' : ''}
-      ${props.disabled ? 'bg-gray-100 dark:bg-gray-800' : ''}
-    `;
+    //     const inputWrapperClasses = `
+    //   flex items-center bg-white dark:bg-gray-900 border rounded-md overflow-hidden
+    //   ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500'}
+    //   ${fullWidth ? 'w-full' : ''}
+    //   ${props.disabled ? 'bg-gray-100 dark:bg-gray-800' : ''}
+    // `;
 
         const inputClasses = `
       block w-full px-3 py-2 text-gray-700 dark:text-gray-200 bg-transparent 

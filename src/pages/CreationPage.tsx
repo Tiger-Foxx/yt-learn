@@ -5,10 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Components
 import YouTubeInput from '@/features/youtube/components/YouTubeInput';
 import YouTubePlayer from '@/features/youtube/components/YouTubePlayer';
-import TranscriptViewer from '@/features/youtube/components/TranscriptViewer';
 import PDFUploader from '@/features/pdf/components/PDFUploader';
-import PDFViewer from '@/features/pdf/components/PDFViewer';
-import Loader from '@/components/layout/Loader';
+// import PDFViewer from '@/features/pdf/components/PDFViewer';
+// import Loader from '@/components/layout/Loader';
 
 // Hooks & Context
 import { useAppContext } from '@/context/AppContext';
@@ -48,8 +47,8 @@ const CreationPage: React.FC = () => {
     // Hooks pour YouTube et PDF
     const {
         videoId,
-        videoInfo,
-        embedUrl,
+        // videoInfo,
+        // embedUrl,
         validateYouTubeUrl,
         isLoading: isYouTubeLoading,
         error: youtubeError
@@ -58,13 +57,13 @@ const CreationPage: React.FC = () => {
     const {
         pdfInfo,
         loadPDF,
-        isLoading: isPDFLoading,
+        // isLoading: isPDFLoading,
         error: pdfError
     } = usePDF();
 
     // Hook de création avec génération
     const {
-        isGenerating,
+        // isGenerating,
         generationProgress,
         currentStep: generationStep,
         generateContent,
@@ -279,7 +278,7 @@ const CreationPage: React.FC = () => {
                     { step: 'configure', label: 'Configuration', icon: '⚙️' },
                     { step: 'generating', label: 'Génération', icon: '💫' },
                     { step: 'result', label: 'Résultat', icon: '🎉' }
-                ].map((step, index) => (
+                ].map((step) => (
                     <div key={step.step} className="flex flex-col items-center relative z-10">
                         <div className={`
               w-12 h-12 rounded-full flex items-center justify-center font-semibold text-sm
@@ -374,7 +373,7 @@ const CreationPage: React.FC = () => {
                                         >
                                             <YouTubeInput
                                                 onVideoValidated={handleYouTubeInput}
-                                                isLoading={isYouTubeLoading}
+                                                // isLoading={isYouTubeLoading}
                                             />
                                             {youtubeError && (
                                                 <motion.div

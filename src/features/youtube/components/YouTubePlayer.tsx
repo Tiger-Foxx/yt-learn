@@ -66,7 +66,7 @@ const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         };
 
         // Handle player ready event
-        const handlePlayerReady = (event: any) => {
+        const handlePlayerReady = () => {
             setIsLoading(false);
             onPlayerReady?.();
         };

@@ -27,6 +27,7 @@ function useYouTube() {
         isValid: boolean;
         videoId: string | null;
         videoInfo: VideoInfo | null;
+        error?:string|null
     }> => {
         setIsLoading(true);
         setError(null);

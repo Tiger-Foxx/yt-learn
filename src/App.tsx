@@ -143,7 +143,7 @@ const App: React.FC = () => {
 
             // Simuler le chargement progressif de chaque étape
             for (const step of steps) {
-                setLoadingProgress(prev => step.progress);
+                setLoadingProgress( step.progress);
                 await new Promise(resolve => setTimeout(resolve, step.delay));
             }
 

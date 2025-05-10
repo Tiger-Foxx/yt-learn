@@ -1,9 +1,9 @@
 import {
-    FinishReason,
-    GenerateContentConfig,
-    GenerateContentParameters,
-    HarmCategory,
-    Part,
+    // FinishReason,
+    // GenerateContentConfig,
+    // GenerateContentParameters,
+    // HarmCategory,
+    // Part,
     SafetySetting
 } from '@google/genai';
 

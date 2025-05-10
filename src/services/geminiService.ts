@@ -244,8 +244,8 @@ async function generateText(options: GenerateTextOptions): Promise<string> {
             const {
                 prompt,
                 modelName = APP_CONFIG.api.gemini.models.default,
-                temperature = APP_CONFIG.api.gemini.defaultTemperature,
-                maxOutputTokens = APP_CONFIG.api.gemini.maxOutputTokens,
+                // temperature = APP_CONFIG.api.gemini.defaultTemperature,
+                // maxOutputTokens = APP_CONFIG.api.gemini.maxOutputTokens,
                 videoUrl,
                 pdfContent
             } = options;
