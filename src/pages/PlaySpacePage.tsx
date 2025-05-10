@@ -122,7 +122,7 @@ const PlaySpacePage: React.FC = () => {
     };
 
     // Generate default thumbnail for different game types
-    const getDefaultThumbnail = (gameType:never, title:string) => {
+    const getDefaultThumbnail = (gameType:any, title:string) => {
         // Background colors for different game types
         const bgColors = {
             quiz: 'from-blue-600 to-blue-900',
@@ -168,8 +168,7 @@ const PlaySpacePage: React.FC = () => {
         };
 
         return (
-            <div className={`w-full h-full bg-gradient-to-br ${bgColors[gameType] || 'from-gray-700 to-gray-900'} flex flex-col items-center justify-center p-4`}>
-                {icon()}
+            <div className={`w-full h-full bg-gradient-to-br ${bgColors[gameType as keyof typeof bgColors] || 'from-gray-700 to-gray-900'} flex flex-col items-center justify-center p-4`}>                {icon()}
                 <div className="mt-4 text-xl font-bold text-white">
                     {getInitials(title)}
                 </div>

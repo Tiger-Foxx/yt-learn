@@ -8,7 +8,7 @@ import { Creation } from '@/services/storageService';
 export const exampleCreations: Partial<Creation>[] = [
     // --- Exemple de Quiz (Thème Noir & Rouge affirmé) ---
     {
-        id:"61257c64-7ed7-4b30-a689-147",
+        id:"fox-1-61257c64-7ed7-4b30-a689-147",
         title: "Les bases de la programmation",
         type: "youtube",
         sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -212,7 +212,7 @@ export const exampleCreations: Partial<Creation>[] = [
 
     // --- Exemple de Flashcards (Thème Noir & Rouge affirmé) ---
     {
-        id:"61257c64-7ed7-4b30-a459-147",
+        id:"fox-2-61257c64-7ed7-4b30-a459-147",
         title: "Vocabulaire français-anglais",
         type: "pdf",
         sourceFileName: "vocabulaire.pdf",
@@ -437,7 +437,7 @@ export const exampleCreations: Partial<Creation>[] = [
 
     // --- Exemple de Jeu interactif (Association - Thème Noir & Rouge affirmé) ---
     {
-        id:"61257c64-78957-4b30-a689-147",
+        id:"fox-3-61257c64-78957-4b30-a689-147",
         title: "Les planètes du système solaire lol",
         type: "youtube",
         sourceUrl: "https://www.youtube.com/watch?v=libKVRa01L8",

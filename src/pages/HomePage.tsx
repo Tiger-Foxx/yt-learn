@@ -4,7 +4,7 @@ import {motion, AnimatePresence, useAnimation} from 'framer-motion';
 import { useAppContext } from '@/context/AppContext';
 import APP_CONFIG from '@/config/appConfig';
 import useYouTube from '@/hooks/useYouTube';
-import usePDF from '@/hooks/usePDF';
+// import usePDF from '@/hooks/usePDF';
 // import { exampleCreations } from '@/data/exampleCreations';
 import  { Creation } from '@/services/storageService';
 import {InstallPWA} from "@/pages/CreationPage.tsx";

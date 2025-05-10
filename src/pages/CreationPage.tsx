@@ -50,7 +50,7 @@ const CreationPage: React.FC = () => {
         // videoInfo,
         // embedUrl,
         validateYouTubeUrl,
-        isLoading: isYouTubeLoading,
+        // isLoading: isYouTubeLoading,
         error: youtubeError
     } = useYouTube();
 
