@@ -154,3 +154,9 @@ body {
 .border-youtube-red { border-color: #FF0000; }
 .shadow-glow { filter: drop-shadow(0 0 4px currentColor); }
 .glow-text { text-shadow: 0 0 8px rgba(255, 0, 0, 0.8); }
+
+@media screen and (max-width: 777px) {
+.decorback{
+    display: none;
+}
+}

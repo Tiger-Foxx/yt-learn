@@ -1,4 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI as GoogleGenerativeAI } from "@google/genai";
+
 import APP_CONFIG from '@/config/appConfig';
 import {extractHTML, parseJSON} from '@/utils/parsers';
 import {
@@ -14,7 +16,7 @@ import {
 
 // Modèle et configuration de l'API
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(API_KEY);
+const genAI = new GoogleGenerativeAI({ apiKey: API_KEY });
 
 /**
  * Options pour les requêtes Gemini
@@ -82,38 +84,57 @@ async function generateText(options: GenerateTextOptions): Promise<string> {
             pdfContent
         } = options;
 
-        const model = genAI.getGenerativeModel({
-            model: modelName,
-            generationConfig: {
-                temperature,
-                maxOutputTokens,
-            },
-        });
+        // const model = genAI.getGenerativeModel({
+        //     model: modelName,
+        //     generationConfig: {
+        //         temperature,
+        //         maxOutputTokens,
+        //     },
+        // });
 
         let result;
 
         if (videoUrl) {
             // Requête avec URL YouTube
-            result = await model.generateContent([prompt, {  fileData: {
-                    mimeType: 'video/mp4',
-                    fileUri: videoUrl,
-                }, }]);
+            result = await genAI.models.generateContent({
+                model: APP_CONFIG.api.gemini.models.videoProcessing,
+                contents: [
+                    prompt,
+                    {
+                        fileData: {
+                            mimeType: 'video/mp4',
+                            fileUri: videoUrl,
+                        },
+                    },
+                ],
+            });
         } else if (pdfContent) {
             // Requête avec fichier PDF
-            const fileAsGenerativePart = {
+            const fileAsGenerativePart: {
+                inlineData: {
+                    data: string;
+                    mimeType: string;
+                };
+            } = {
                 inlineData: {
                     data: await blobToBase64(pdfContent),
-                    mimeType: "application/pdf"
-                }
+                    mimeType: "application/pdf",
+                },
             };
-            result = await model.generateContent([prompt, fileAsGenerativePart]);
+            result = await genAI.models.generateContent({
+                model: APP_CONFIG.api.gemini.models.pdfProcessing,
+                contents: [prompt, fileAsGenerativePart],
+            });
         } else {
             // Requête texte simple
-            result = await model.generateContent(prompt);
+            result =await genAI.models.generateContent({
+                model: modelName,
+                contents: prompt,
+            });
         }
 
-        const response = await result.response;
-        return response.text();
+        // const response = await result.response;
+        return result.text || 'NO RESPONSE';
     } catch (error) {
         console.error("Erreur lors de la génération de contenu avec Gemini:", error);
         throw new Error(`Erreur Gemini: ${error instanceof Error ? error.message : String(error)}`);
@@ -163,7 +184,7 @@ async function generateSpecFromVideo(videoUrl: string, additionalInstructions?: 
 
         // Traiter la réponse pour extraire la spec JSON
         const parsedResponse = parseJSON(specResponse);
-        let spec =  parsedResponse.spec || specResponse;
+        const spec =  parsedResponse.spec || specResponse;
         console.log("************** SPEC JUSTE POST PARSING *****************",spec )
         spec.addendum = SPEC_ADDENDUM;
 
@@ -197,7 +218,7 @@ async function generateSpecFromPDF(pdfContent: Blob, additionalInstructions?: st
 
         // Traiter la réponse pour extraire la spec JSON
         const parsedResponse = parseJSON(specResponse);
-        let spec = parsedResponse.spec || specResponse;
+        const spec = parsedResponse.spec || specResponse;
         spec.addendum= SPEC_ADDENDUM;
 
         return spec as GameSpec;

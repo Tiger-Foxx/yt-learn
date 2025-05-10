@@ -513,16 +513,16 @@ const ExamplesGrid: React.FC = () => {
 
     // Charger les exemples au montage du composant
     useEffect(() => {
-        // Récupérer les exemples statiques et les convertir au format Creation
-        const staticExamples = exampleCreations.map(example => ({
-            ...example,
-            id: example.id || `static-${Math.random().toString(36).substring(2, 11)}`,
-            createdAt: example.createdAt || Date.now(),
-            updatedAt: example.updatedAt || Date.now()
-        })) as Creation[];
+        // // Récupérer les exemples statiques et les convertir au format Creation
+        // const staticExamples = exampleCreations.map(example => ({
+        //     ...example,
+        //     id: example.id || `static-${Math.random().toString(36).substring(2, 11)}`,
+        //     createdAt: example.createdAt || Date.now(),
+        //     updatedAt: example.updatedAt || Date.now()
+        // })) as Creation[];
 
         // Combiner avec les créations de l'utilisateur
-        const allExamples = [...staticExamples, ...creationHistory];
+        const allExamples = [ ...creationHistory];
 
         // Trier par date de création (plus récents d'abord)
         const sortedExamples = allExamples.sort((a, b) => b.createdAt - a.createdAt);

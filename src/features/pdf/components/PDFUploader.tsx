@@ -196,7 +196,6 @@ const PDFUploader: React.FC<PDFUploaderProps> = ({ onPDFUploaded }) => {
                         }}
 
                         onTouchEnd={(e) => {
-                            e.stopPropagation();
                             if (file) {
                                 onPDFUploaded(file);
                             }

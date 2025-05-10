@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navigation from '@/components/layout/Navigation';
 import APP_CONFIG from '@/config/appConfig';
+import logo from '@/assets/logo.png';
+
 
 const Header: React.FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -78,27 +80,9 @@ const Header: React.FC = () => {
                                 transition={{ duration: 0.5 }}
                                 className="mr-1"
                             >
-                                <svg
-                                    width="32"
-                                    height="32"
-                                    viewBox="0 0 32 32"
-                                    fill="none"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                >
-                                    <rect width="32" height="32" rx="6" fill="#FF0000" />
-                                    <path
-                                        d="M22 16L12 22V10L22 16Z"
-                                        fill="white"
-                                    />
-                                </svg>
+                                <img src={logo} width={115} height={115}/>
                             </motion.div>
-                            <motion.div
-                                initial={{ x: -20, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
-                                transition={{ duration: 0.5, delay: 0.1 }}
-                            >
-                                <span className="text-2xl font-bold text-white leading-none">YT<span className="text-youtube-red">Learn</span></span>
-                            </motion.div>
+
                         </Link>
                     </div>
 

@@ -115,10 +115,10 @@ const AboutPage: React.FC = () => {
                                 </svg>
                             </div>
                         </div>
-                        <h2 className="text-xl font-bold mb-2">Pascal Arthur Donfack</h2>
-                        <p className="text-gray-400 mb-4 text-sm">The Fox Coder</p>
+                        <h2 className="text-xl font-bold mb-2">Pascal Arthur Montgomery</h2>
+                        <p className="text-gray-400 mb-4 text-sm">Fox</p>
                         <p className="text-gray-300 text-sm mb-6">
-                            Développeur et créateur passionné par l'IA et l'apprentissage interactif. Je crée des outils innovants pour améliorer l'éducation.
+                            <p><strong>Computer Engineering scientist</strong> </p>  Je crée des outils innovants pour améliorer l'éducation.
                         </p>
 
                         <a

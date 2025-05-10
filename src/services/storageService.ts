@@ -1,4 +1,5 @@
 import APP_CONFIG from '@/config/appConfig';
+import {exampleCreations} from "@/data/exampleCreations.ts";
 
 /**
  * Types pour le service de stockage
@@ -114,8 +115,15 @@ class StorageService {
      * Récupère l'historique des créations
      */
     getCreationHistory(): Creation[] {
-        return this.getItem<Creation[]>('creations', []);
+    const creations = this.getItem<Partial<Creation>[]>('creations', []);
+    if (creations) {
+        return creations
+            .filter((creation): creation is Creation => creation.id !== undefined && creation.title !== undefined && creation.type !== undefined && creation.gameType !== undefined && creation.content !== undefined)
+            .concat(exampleCreations);
     }
+
+    return exampleCreations;
+}
 
     /**
      * Ajoute une création à l'historique
