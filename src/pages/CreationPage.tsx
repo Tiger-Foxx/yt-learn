@@ -596,7 +596,7 @@ const CreationPage: React.FC = () => {
                                                     <input
                                                         type="range"
                                                         min="5"
-                                                        max="20"
+                                                        max="40"
                                                         step="1"
                                                         value={questionCount}
                                                         onChange={(e) => setQuestionCount(parseInt(e.target.value))}
