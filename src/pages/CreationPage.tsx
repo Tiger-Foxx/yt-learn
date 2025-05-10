@@ -591,7 +591,7 @@ const CreationPage: React.FC = () => {
                                                     <div className="flex items-center justify-between mb-1">
                                                         <span className="text-gray-400 text-sm">5</span>
                                                         <span className="text-white font-medium">{questionCount}</span>
-                                                        <span className="text-gray-400 text-sm">20</span>
+                                                        <span className="text-gray-400 text-sm">40</span>
                                                     </div>
                                                     <input
                                                         type="range"
