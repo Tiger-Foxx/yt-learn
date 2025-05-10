@@ -298,6 +298,6 @@ Pour toute question, suggestion ou collaboration, n'hésitez pas à me contacter
   <em>YT-Learn - Intelligence artificielle de pointe au service de l'éducation</em>
   <br>
   <a href="https://github.com/Tiger-Foxx/yt-learn">GitHub</a> |
-  <a href="https://yt-learn.vercel.app">Demo</a> |
+  <a href="https://https://yt-learn.the-fox.tech">Demo</a> |
   <a href="https://the-fox.tech">Site de l'auteur</a>
 </p>

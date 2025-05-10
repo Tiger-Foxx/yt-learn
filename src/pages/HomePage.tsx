@@ -676,9 +676,12 @@ const ExamplesGrid: React.FC = () => {
                         <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h-2v2H9v-2H7v-1h2v-2h1v2h2v1zm4-1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm2-3c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/>
                     </svg>
                     <h3 className="text-xl font-bold text-white mb-2">Aucun résultat trouvé</h3>
-                    <p className="text-gray-400 mb-6">Aucune création ne correspond à ce filtre.</p>
+                    <p className="text-gray-400 mb-6">Vous n'avez encore aucune création correspondante à ce filtre.</p>
                     <button
-                        onClick={() => setActiveFilter('all')}
+                        onClick={() => {
+                            setActiveFilter('all');
+                            navigate('/playspace');
+                        }}
                         className="px-4 py-2 bg-youtube-red text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                         Voir tous les exemples
