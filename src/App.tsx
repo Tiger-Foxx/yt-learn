@@ -16,6 +16,7 @@ import ContactPage from '@/pages/ContactPage';
 import APP_CONFIG from '@/config/appConfig';
 import Loader from '@/components/layout/Loader';
 import InstallPWAPrompt from '@/components/pwa/InstallPWAPrompt';
+import { Analytics } from "@vercel/analytics/next";
 import './App.css';
 
 // Composant de routage avec animations
