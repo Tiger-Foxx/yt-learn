@@ -220,6 +220,8 @@ const App: React.FC = () => {
                     </Router>
                 </div>
             </AppProvider>
+	<Analytics />
+
         </>
     );
 };
