@@ -11,6 +11,8 @@ Allow: /privacy
 Allow: /contact
 Allow: /public/
 Allow: /sitemap.xml
+Allow: /favicon.png
+Allow: /favicon.ico
 
 # Protéger les pages nécessitant une authentification ou non destinées à l'indexation
 Disallow: /playspace/*    # Pages de jeux générés spécifiques à l'utilisateur
